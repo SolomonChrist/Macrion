@@ -1,0 +1,124 @@
+{
+  "round": 1,
+  "updated": "2026-08-13 · phase 1 systems in flight",
+  "gpu": "GTX 1660 Ti · D3D11 · 1920×1080",
+  "tagline": "One terrain, spanning golden-hour scrubland to cold misty highland as world state. A from-scratch Three.js engine graded against PS4-native reference frames: builders ship, critics score blind, the single biggest gap comes back. Repeat until the tier is indistinguishable.",
+  "strip": [
+    {
+      "k": "Ripple defect",
+      "v": "fixed"
+    },
+    {
+      "k": "Frame rate",
+      "v": "92-135 fps @ 1080p"
+    },
+    {
+      "k": "Draw calls",
+      "v": "165-220 / 400"
+    },
+    {
+      "k": "Agents live",
+      "v": "6 building"
+    },
+    {
+      "k": "Ship gate",
+      "v": "78 / 100"
+    }
+  ],
+  "systems": [
+    {
+      "id": "scene-foundation",
+      "name": "Scene Foundation",
+      "brief": "Sky, atmosphere, terrain, lighting, shadows, grade — plus a time-of-day and weather system so one zone spans both reference art directions. The dependency root; every other system renders on top of this.",
+      "status": "refining",
+      "iteration": 2,
+      "score": null,
+      "captureDir": "captures/2026-08-13T16-10-25_terrain-r2-det",
+      "gap": "ROUND 2 LANDED — the convergent defect is fixed. The corduroy ripple both critics independently traced to macRelief() is gone from every shot; grazing, dawn and overcast now show genuine cast shadows from terrain folds and legible ground instead of a raked moire pattern. The builder found a third contributor neither critic named: the normal gradient used a fixed 0.11 m finite-difference step that undersampled the sub-metre octaves and beat against them, so it now tracks the pixel footprint. Not re-scored yet — a critic re-runs after the gameplay systems land. Known remaining: eye reads greener than the FFXV arid reference, a faint LOD ring is visible in topdown where near-field debris fades, boulders flatten to dark ellipses at 200-400 m, and distant peaks still lack bedding planes.",
+      "next": "Held. No further terrain or atmosphere polish until the gameplay systems are running — user directive. Re-score both after phase 1 functionality is complete.",
+      "eta": "paused by directive",
+      "rubric": [
+        {
+          "id": "R1",
+          "name": "Lighting & tonemapping",
+          "score": 2.8,
+          "note": "Sky scattering, IBL ambient and colour space all read PS4-tier. Held back by a flat white clipped patch around the sun disc in grazing and dawn."
+        },
+        {
+          "id": "R2",
+          "name": "Shadows & contact",
+          "score": 2.25,
+          "note": "Contact darkening under rocks is convincing (3/4). Killed by R2.2 at 1/4 — a mechanically regular corduroy ripple raked across the midground in 7 of 9 shots."
+        },
+        {
+          "id": "R3",
+          "name": "Terrain & world scale",
+          "score": 2.2,
+          "note": "Layered silhouettes and aerial perspective are genuine strengths (3/4 each). Ground detail at eye height scored 1/4 — the same ripple artifact."
+        },
+        {
+          "id": "R4",
+          "name": "Foliage & density",
+          "score": 1.6,
+          "note": "Weakest section. Backlit translucency 1/4 (scrub reads as flat opaque silhouettes), wind 1/4 (no coherent gust direction), density countable rather than a field."
+        },
+        {
+          "id": "R5",
+          "name": "Post & atmosphere",
+          "score": 2.5,
+          "note": "Per-weather grade praised as genuinely PS4-tier and clearly differentiated. Bloom bleeds into non-HDR sky around the sun."
+        },
+        {
+          "id": "R6",
+          "name": "Time-of-day & weather",
+          "score": 2.17,
+          "note": "Night (3/4) and golden hour (3/4) are authored and hold up. Overcast nearly shapeless (1/4) and storm wetness reads as a colour shift, not water (1/4)."
+        }
+      ]
+    },
+    {
+      "id": "character",
+      "name": "Character System",
+      "brief": "Original humanoid mesh, skeleton, skinning, PBR materials, idle animation. No copyrighted likeness or ripped rig.",
+      "status": "building",
+      "iteration": 1,
+      "score": null,
+      "captureDir": null,
+      "gap": null,
+      "next": "Opus builder running now, in parallel with the Scene Foundation refine. Original humanoid built from scratch — profile-swept skinned mesh, procedural PBR skin/cloth/leather/hair, breathing idle plus rough walk and run. Two new capture poses added: hero (38 deg, 3/4 body, golden hour) and portrait (30 deg, close, judges topology and deformation)."
+    },
+    {
+      "id": "environment",
+      "name": "Environment, NPCs & Enemies",
+      "brief": "NPC and enemy characters reusing the player rig, plus props, landmarks and set dressing that make the basin a place rather than terrain.",
+      "status": "queued",
+      "iteration": 0,
+      "score": null,
+      "captureDir": null,
+      "gap": null,
+      "next": "Blocked on the Character builder landing — NPCs and enemies reuse its skinned-mesh generator and skeleton rather than duplicating it. Spawns as soon as the rig contract is real."
+    },
+    {
+      "id": "visual-polish",
+      "name": "Story, Quest & Cinematics",
+      "brief": "Original Macrion premise, the first major quest, branching dialogue, progression state, and a data-driven cutscene system with spline camera moves.",
+      "status": "building",
+      "iteration": 1,
+      "score": null,
+      "captureDir": null,
+      "gap": null,
+      "next": "Two builders running: Game Systems (Sonnet) writing the premise, first quest, dialogue trees and event bus; Cinematics (Haiku) building the cutscene format, spline camera and letterboxing with an intro establishing shot."
+    },
+    {
+      "id": "interaction",
+      "name": "Player, Audio & UI",
+      "brief": "Third-person controller with terrain collision, adaptive synthesized score and ambience, and the HUD overlay. Everything audio is generated in code — no samples, no copyrighted music.",
+      "status": "building",
+      "iteration": 1,
+      "score": null,
+      "captureDir": null,
+      "gap": null,
+      "next": "Three builders running: Player Controller (Sonnet) for movement, camera rig and collision; Audio (Sonnet) for the adaptive WebAudio score, ambience and SFX; HUD (Haiku) for health, objective, dialogue box, prompts and toasts."
+    }
+  ]
+}

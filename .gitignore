@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.vite/
+
+# Capture output — regenerable via `node tools/shots.mjs`, and large.
+# progress.html embeds the frames that matter, so history is preserved there.
+captures/
+
+# Reference frames are copyrighted third-party screenshots held locally for
+# grading only. They must NOT be redistributed via this repository.
+visuals/
+
+*.log
+.DS_Store
+Thumbs.db
