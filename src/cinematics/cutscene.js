@@ -38,6 +38,7 @@ export function createCutscene(ctx) {
     startTime: 0,
     script: null,
     previousMode: 'shot',
+    originalMode: 'shot',  // Preserved across nested play() calls
     playResolve: null,
     skipRequested: false,
   };
@@ -162,6 +163,7 @@ export function createCutscene(ctx) {
 
       camera.position.copy(pos);
       if (target) camera.lookAt(...target);
+      camera.updateMatrixWorld(false);
       if (fov !== undefined) {
         const fovStart = beat.fovStart ?? camera.fov;
         const fovEnd = fov;
@@ -211,10 +213,17 @@ export function createCutscene(ctx) {
         return;
       }
 
+      // Only save the mode if not already playing a cutscene; this prevents nested
+      // play() calls from losing track of the original mode before any cutscene started
+      const wasPlaying = state.playing;
+      if (!wasPlaying || engine.mode !== 'cutscene') {
+        state.previousMode = engine.mode;
+        state.originalMode = engine.mode;
+      }
+
       state.playing = true;
       state.startTime = ctx.time;
       state.script = script;
-      state.previousMode = engine.mode;
       state.playResolve = resolve;
       state.skipRequested = false;
 
@@ -226,19 +235,8 @@ export function createCutscene(ctx) {
       // Take camera authority
       engine.setMode('cutscene');
 
-      // Show letterbox
+      // Show letterbox (animation happens in update())
       letterboxContainer.style.display = 'block';
-      const barHeight = (window.innerHeight * 0.18) | 0; // ~18% of viewport
-      const letterboxDuration = script.letterboxDuration || 0.3;
-
-      // Animate bars in during first part
-      const animateBars = (elapsed) => {
-        const t = Math.min(elapsed / letterboxDuration, 1);
-        topBar.style.height = (barHeight * t) + 'px';
-        bottomBar.style.height = (barHeight * t) + 'px';
-      };
-
-      state.animateBars = animateBars;
     });
   }
 
@@ -256,8 +254,9 @@ export function createCutscene(ctx) {
     topBar.style.height = '0';
     bottomBar.style.height = '0';
 
-    // Restore camera authority
-    engine.setMode(state.previousMode);
+    // Restore camera authority to the mode before this play() call
+    const restoreMode = state.originalMode !== 'cutscene' ? state.originalMode : state.previousMode;
+    engine.setMode(restoreMode);
 
     if (state.playResolve) {
       state.playResolve();
@@ -307,13 +306,15 @@ export function createCutscene(ctx) {
       topBar.style.height = (barHeight * Math.max(0, t)) + 'px';
       bottomBar.style.height = (barHeight * Math.max(0, t)) + 'px';
     } else {
-      // Finished
+      // Finished — restore camera authority to the mode before this play() call
       topBar.style.height = '0';
       bottomBar.style.height = '0';
       letterboxContainer.style.display = 'none';
 
       state.playing = false;
-      engine.setMode(state.previousMode);
+      // Use originalMode if we're finishing a nested play, otherwise use previousMode
+      const restoreMode = state.originalMode !== 'cutscene' ? state.originalMode : state.previousMode;
+      engine.setMode(restoreMode);
 
       if (state.playResolve) {
         state.playResolve();

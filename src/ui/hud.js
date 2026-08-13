@@ -16,6 +16,9 @@ export function createHUD(ctx) {
     return { name: 'hud', update() {}, setVisible() {}, toast() {}, dialogue() {}, prompt() {}, setObjective() {}, setHealth() {} };
   }
 
+  // Store current context for time-based operations
+  let currentCtx = ctx;
+
   // Create DOM structure
   const createElements = () => {
     // Health bar (bottom-left)
@@ -112,6 +115,7 @@ export function createHUD(ctx) {
   let currentDialogue = null;
   let dialogueIndex = 0;
   let toasts = [];
+  let lastToastCleanupTime = 0;
 
   // Handle dialogue advancement
   const handleDialogueKey = (e) => {
@@ -166,9 +170,12 @@ export function createHUD(ctx) {
     name: 'hud',
 
     update(ctx) {
-      // Remove expired toasts
-      const now = performance.now();
-      toasts = toasts.filter((t) => now - t.created < 2500);
+      // Update stored context for toast timing (deterministic via ctx.time)
+      currentCtx = ctx;
+
+      // Remove expired toasts (2.5 second lifetime)
+      const now = ctx.time;
+      toasts = toasts.filter((t) => now - t.created < 2.5);
 
       // Rebuild toast display
       dom.toast.container.innerHTML = '';
@@ -187,9 +194,11 @@ export function createHUD(ctx) {
 
     toast(msg) {
       if (!msg) return;
+      // Toast lifetime is deterministic and driven by ctx.time in update()
+      // For now, store current ctx.time (will be set on first update after toast creation)
       toasts.push({
         text: msg,
-        created: performance.now(),
+        created: ctx.time,
       });
     },
 
