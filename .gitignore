@@ -13,3 +13,7 @@ visuals/
 *.log
 .DS_Store
 Thumbs.db
+
+# Heartbeats are runtime agent state, not source.
+# Kept out of history but the directory is tracked via .gitkeep.
+heartbeats/*.md

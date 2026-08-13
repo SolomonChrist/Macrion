@@ -193,13 +193,23 @@ export function buildField() {
     F.ellipsoid([s * 0.0335, 1.6520, 0.0605], [0.0235, 0.0180, 0.0195],
       { op: 'sub', k: 0.009, part: H });
   }
+  // RESOLUTION FLOOR. The head is polygonized on a 5.8 mm grid, so a primitive
+  // whose smallest half-extent is under ~5 mm spans less than two cells: surface
+  // nets then catches it in isolated cells, the Laplacian pass drags those
+  // vertices somewhere else, and the reprojection pushes them onto a level set
+  // that no longer exists there. The result is the speckled, half-carved
+  // "scribble" the previous build put on the face. Every feature below is now
+  // at least ~2 cells across; the eye aperture and brows are also read at a
+  // stylized (larger than anatomical) scale, which is the target look anyway.
   for (const s of [1, -1]) {
-    F.ellipsoid([s * 0.0335, 1.6585, 0.0625], [0.0222, 0.0110, 0.0160], { mat: MAT.SKIN, k: 0.006, part: H });
-    F.ellipsoid([s * 0.0335, 1.6440, 0.0640], [0.0200, 0.0082, 0.0150], { mat: MAT.SKIN, k: 0.006, part: H });
+    F.ellipsoid([s * 0.0335, 1.6600, 0.0625], [0.0232, 0.0125, 0.0165], { mat: MAT.SKIN, k: 0.006, part: H });
+    F.ellipsoid([s * 0.0335, 1.6428, 0.0640], [0.0212, 0.0108, 0.0155], { mat: MAT.SKIN, k: 0.006, part: H });
   }
   for (const s of [1, -1]) {
-    F.ellipsoid([s * 0.0335, 1.6512, 0.0700], [0.0160, 0.0053, 0.0135],
-      { op: 'sub', k: 0.004, part: H });
+    // palpebral opening: was 5.3 mm tall on a 5.8 mm grid — under one cell, so
+    // it carved a ragged rim and the eyeball showed through it in fragments.
+    F.ellipsoid([s * 0.0338, 1.6512, 0.0706], [0.0192, 0.0100, 0.0165],
+      { op: 'sub', k: 0.005, part: H });
   }
   // nose
   F.capsule([0, 1.6720, 0.0625], [0, 1.6215, 0.0905], 0.0095, 0.0135,
@@ -209,23 +219,26 @@ export function buildField() {
     F.ellipsoid([s * 0.0148, 1.6090, 0.0850], [0.0096, 0.0098, 0.0118], { mat: MAT.SKIN, k: 0.007, part: H });
   }
   F.ellipsoid([0, 1.6060, 0.0855], [0.0120, 0.0072, 0.0120], { mat: MAT.SKIN, k: 0.007, part: H });
-  // mouth
-  F.ellipsoid([0, 1.5895, 0.0838], [0.0238, 0.0086, 0.0140], { mat: MAT.SKIN, k: 0.006, part: H });
-  F.ellipsoid([0, 1.5752, 0.0828], [0.0208, 0.0096, 0.0138], { mat: MAT.SKIN, k: 0.006, part: H });
-  F.ellipsoid([0, 1.5960, 0.0885], [0.0038, 0.0100, 0.0070], { op: 'sub', k: 0.004, part: H });
-  F.capsule([-0.0190, 1.5822, 0.0850], [0.0190, 1.5822, 0.0850], 0.0024, 0.0024,
-    { scale: [1, 1, 0.75], op: 'sub', k: 0.0035, part: H });
-  F.capsule([-0.0150, 1.5645, 0.0770], [0.0150, 1.5645, 0.0770], 0.0038, 0.0038,
+  // mouth — lips pushed apart so the parting groove between them can be two
+  // cells wide. The old 2.4 mm groove and 3.8 mm philtrum were both far below
+  // the grid and only ever produced speckle.
+  F.ellipsoid([0, 1.5928, 0.0838], [0.0242, 0.0098, 0.0142], { mat: MAT.SKIN, k: 0.006, part: H });
+  F.ellipsoid([0, 1.5716, 0.0828], [0.0214, 0.0112, 0.0140], { mat: MAT.SKIN, k: 0.006, part: H });
+  F.capsule([-0.0186, 1.5824, 0.0852], [0.0186, 1.5824, 0.0852], 0.0060, 0.0060,
+    { scale: [1, 1, 0.70], op: 'sub', k: 0.005, part: H });
+  F.capsule([-0.0148, 1.5610, 0.0768], [0.0148, 1.5610, 0.0768], 0.0060, 0.0060,
     { op: 'sub', k: 0.007, part: H });
   // ears
   for (const s of [1, -1]) {
     F.ellipsoid([s * 0.0755, 1.6410, -0.014], [0.0080, 0.0250, 0.0175], { mat: MAT.SKIN, k: 0.012, part: H });
     F.ellipsoid([s * 0.0815, 1.6380, -0.010], [0.0070, 0.0160, 0.0105], { op: 'sub', k: 0.005, part: H });
   }
-  // brows
+  // brows — the old capsule was 6 mm x 0.55 = 3.3 mm of vertical half-extent,
+  // i.e. barely half a cell, so it meshed as scattered hair-coloured chips
+  // across the forehead instead of a brow.
   for (const s of [1, -1]) {
-    F.capsule([s * 0.0140, 1.6690, 0.0700], [s * 0.0530, 1.6700, 0.0570], 0.0060, 0.0044,
-      { scale: [1, 0.55, 0.75], mat: MAT.HAIR, k: 0.005, part: H });
+    F.capsule([s * 0.0135, 1.6730, 0.0700], [s * 0.0545, 1.6742, 0.0560], 0.0088, 0.0066,
+      { scale: [1, 0.85, 0.85], mat: MAT.HAIR, k: 0.006, part: H });
   }
 
   // ---------------------------------------------------------- hair -----
@@ -615,9 +628,15 @@ export function buildPieces() {
   }
 
   // ------------------------------------------------------------ eyes ----
+  // The eyeball must sit BEHIND the lid surface at every point of the aperture,
+  // or it reads as a loose ball stuck on the face. The lids' front surface is
+  // at z ~= 0.0785; a 13.2 mm ball centred at z = 0.0628 fronts at 0.0760, so
+  // it stays 2.5 mm inside the lid line all the way round the (now resolvable)
+  // palpebral opening.
   for (const s of [1, -1]) {
-    const c = [s * 0.0335, 1.6512, 0.0632];
-    const sph = new THREE.SphereGeometry(0.0129, 20, 14);
+    const R = 0.0132;
+    const c = [s * 0.0338, 1.6512, 0.0628];
+    const sph = new THREE.SphereGeometry(R, 22, 16);
     const m = new THREE.Matrix4().makeTranslation(c[0], c[1], c[2]);
     const g = fromThree(sph, m);
     tagPart(g, MAT.EYE, null);
@@ -625,20 +644,22 @@ export function buildPieces() {
     const gaze = [s * 0.16, -0.02, 0.986];
     const gl = Math.hypot(...gaze);
     for (let v = 0; v < g.count; v++) {
-      const dx = (g.positions[v * 3] - c[0]) / 0.0129;
-      const dy = (g.positions[v * 3 + 1] - c[1]) / 0.0129;
-      const dz = (g.positions[v * 3 + 2] - c[2]) / 0.0129;
+      const dx = (g.positions[v * 3] - c[0]) / R;
+      const dy = (g.positions[v * 3 + 1] - c[1]) / R;
+      const dz = (g.positions[v * 3 + 2] - c[2]) / R;
       const d = (dx * gaze[0] + dy * gaze[1] + dz * gaze[2]) / gl;
       const ang = Math.acos(clamp(d, -1, 1));
       let col;
-      if (ang < 0.175) col = [0.02, 0.017, 0.016];                       // pupil
-      else if (ang < 0.50) {
-        const q = smoothstep(0.175, 0.50, ang);
-        col = [lerp(0.30, 0.52, q), lerp(0.34, 0.50, q), lerp(0.24, 0.34, q)];   // iris
-        const limb = smoothstep(0.40, 0.50, ang);
-        col = col.map((v2) => v2 * (1 - limb * 0.75));                   // limbal ring
+      // a larger iris than life — the stylized read, and it survives the
+      // aperture instead of vanishing behind the lids
+      if (ang < 0.30) col = [0.02, 0.017, 0.016];                        // pupil
+      else if (ang < 0.78) {
+        const q = smoothstep(0.30, 0.78, ang);
+        col = [lerp(0.24, 0.46, q), lerp(0.30, 0.46, q), lerp(0.20, 0.31, q)];   // iris
+        const limb = smoothstep(0.64, 0.78, ang);
+        col = col.map((v2) => v2 * (1 - limb * 0.78));                   // limbal ring
       } else {
-        const q = smoothstep(0.50, 1.5, ang);
+        const q = smoothstep(0.78, 1.6, ang);
         col = [lerp(0.86, 1.02, q), lerp(0.80, 0.98, q), lerp(0.78, 0.95, q)];   // sclera
       }
       g.tint[v * 3] = col[0]; g.tint[v * 3 + 1] = col[1]; g.tint[v * 3 + 2] = col[2];

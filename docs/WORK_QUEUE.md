@@ -10,8 +10,20 @@ Read with `docs/BUILD_PLAN.md` (model routing), `docs/STORY.md` (canon),
 
 ## Standing rules for the lead when a cron fires
 
+0. **Run `node tools/heartbeat.mjs` FIRST.** It is the source of truth for which agents are
+   alive. Anything `STALE` (>5 min without a beat) is presumed dead — read its
+   `heartbeats/<name>.md`, commit whatever it left on disk, and **spawn a replacement whose
+   brief contains that heartbeat verbatim**, told to resume rather than restart. Never leave
+   a dead agent's slot empty; the project should never be idle. See `docs/HEARTBEAT.md`.
+
+   **Every brief you write must require the heartbeat.** Give the agent its exact filename,
+   the update cadence (every 3–5 tool calls, and always before any long operation), and the
+   format. An agent without a heartbeat is one that can die silently, and that has already
+   cost this project two full waves.
+
 1. **Check what's already running first.** Do not double-spawn a wave that is still in
-   flight. If ≥3 agents are live, do nothing but report and reschedule.
+   flight. If ≥3 agents are live *and healthy per the heartbeat monitor*, do nothing but
+   report and reschedule.
 2. **Commit and push after every agent lands.** Non-negotiable — seven agents' work was
    nearly lost to a spend limit on 2026-08-13. `git add -A && git commit && git push`.
 3. **Verify with a capture before believing any report.** `node tools/shots.mjs`.
