@@ -95,8 +95,27 @@ The user authorised running through **all five systems** unattended. Do not stop
 Foundation. Take each to the bar inside the level-1 scope, then move on.
 
 3. **Character System** — Opus for the rig/skinning/animation core, Haiku for material and
-   outfit variants once the pattern exists. One original humanoid, PBR materials graded under
-   the real lighting, idle + walk + run. No copyrighted likeness.
+   outfit variants once the pattern exists. Idle + walk + run, PBR materials graded under the
+   real lighting.
+
+   **The character is now specified: Oz Macrion. Read `docs/STORY.md` before building.**
+   Early twenties, muscular and fit, raised as a prince — trained in magic and sword fighting.
+   Carries a **sword** and a **flute**; both are plot-critical and must be visible on him.
+   Wardrobe is royal-but-travelling: fine materials worn by the road.
+
+   **Hair is the defining feature and the hard part.** Anime-styled in the shōnen action-hero
+   tradition — bold, sculpted, gravity-defying, with strong directional flow. Build it as
+   sculpted geometry, not strands or hair cards, and check it against the `backlit` shot:
+   the silhouette must be readable as Oz in one glance from any angle.
+
+   **Original silhouette, genre-accurate style.** Build to the *convention*, never to a
+   specific existing character — no copied hair shape, no borrowed outfit, no recognizable
+   likeness. Oz belongs to the genre and is his own character. Same rule the renderer follows.
+
+   Current state: a previous builder was killed mid-write by a spend limit. Its work survives
+   in `src/entities/character/{build,geom,material,rig}.js` — a real skinned humanoid that
+   renders at 83–87 fps, but the surface is shredded and the face is unfinished. **Repair
+   before extending**, and re-target the design to Oz.
 4. **Player Interaction** — Sonnet for the controller and heightfield collision, Haiku for the
    HUD overlay. Third-person camera rig with collision. Do this BEFORE environment dressing so
    the zone is authored around how the player actually moves through it.

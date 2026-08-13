@@ -471,6 +471,36 @@ what keeps the player inside the flow channel between frustration and boredom.
 
 The full expansion lives in `docs/GAME_DESIGN.md`.
 
+### The story prompt
+
+Delivered as a single freehand prompt covering the protagonist, the full cast, the world
+geography, the three-act structure and the ending twist. Structured into canon in
+`docs/STORY.md`. The reusable shape of it:
+
+```
+[PROTAGONIST] — age, build, distinctive visual feature, training, temperament.
+[ORIGIN] — the backstory that pays off at the very end, not at the start.
+[INCITING INCIDENT] — the object they seek, the guide they wake, the charge they accept.
+[THE HOOK] — the thing they fall in love with in the first ten minutes.
+[ACT I] — N regions, N bosses, each granting the power needed for the next.
+[ACT II] — M paths, M items, M mini-bosses, puzzles, all converging.
+[ACT III] — the final boss, and THE TWIST.
+[THE END CARD] — where the player is sent afterwards.
+```
+
+**The lesson worth stealing from how this was written:** the twist is set up in the *first*
+scene and paid off in the *last*. Sarah is an apparition from her very first appearance — the
+game never lies to the player, it just doesn't explain. A twist is fair when the evidence was
+always on screen.
+
+**One thing the lead added unprompted, and why:** the brief said the hair should match "an
+Anime character in a video game. Think of characters like Goku." That's a *style* reference,
+so the canon records it as a genre convention to build toward — bold sculpted spikes, strong
+directional flow, silhouette-readable — with an explicit instruction never to replicate a
+specific existing character. Same discipline as the visual references: learn from it, generate
+something original. If you're doing this yourself, write that distinction down before a builder
+starts, not after.
+
 ---
 
 ## 10. Commands

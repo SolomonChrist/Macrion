@@ -365,3 +365,14 @@ node tools/progress.mjs                        # regenerate the progress page
   beat against the sub-metre octaves.
 - Performance held throughout: 92–135 fps at 1080p, 165–220 draw calls against a 400 budget,
   on a GTX 1660 Ti. Captures verified bit-identical between runs.
+
+### U15 — the character and story canon
+
+Full freehand storyline prompt: Oz Macrion, King Baiza, Queen Maseena, the maid-mother
+swap, Melina, the Great Head of Macrion, Sarah, Sallenties, the Snagulas. Three regions
+(Sand Kingdom, Badlands, Water Coastline), then five paths with five items, then the Great
+Mountain. Ending twist: the reincarnation spell, Sarah in a coma the whole time, the wedding,
+the twins, and Sallenties reborn as one of them. End card to solomonchrist.com.
+
+Structured into canon in docs/STORY.md. Verbatim prompt preserved in the session transcript;
+the canon document is the authoritative build reference.
