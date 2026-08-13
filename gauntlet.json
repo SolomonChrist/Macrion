@@ -1,28 +1,28 @@
 {
   "round": 1,
-  "updated": "2026-08-13 · phase 1 systems in flight",
+  "updated": "2026-08-13 · BLOCKED on account spend limit · work committed to git",
   "gpu": "GTX 1660 Ti · D3D11 · 1920×1080",
   "tagline": "One terrain, spanning golden-hour scrubland to cold misty highland as world state. A from-scratch Three.js engine graded against PS4-native reference frames: builders ship, critics score blind, the single biggest gap comes back. Repeat until the tier is indistinguishable.",
   "strip": [
     {
-      "k": "Ripple defect",
-      "v": "fixed"
+      "k": "Status",
+      "v": "blocked — spend limit"
+    },
+    {
+      "k": "Work saved",
+      "v": "committed to git"
     },
     {
       "k": "Frame rate",
-      "v": "92-135 fps @ 1080p"
+      "v": "83-111 fps @ 1080p"
     },
     {
       "k": "Draw calls",
-      "v": "165-220 / 400"
+      "v": "168-222 / 400"
     },
     {
-      "k": "Agents live",
-      "v": "6 building"
-    },
-    {
-      "k": "Ship gate",
-      "v": "78 / 100"
+      "k": "Shots",
+      "v": "11 rendering clean"
     }
   ],
   "systems": [
@@ -33,9 +33,9 @@
       "status": "refining",
       "iteration": 2,
       "score": null,
-      "captureDir": "captures/2026-08-13T16-10-25_terrain-r2-det",
-      "gap": "ROUND 2 LANDED — the convergent defect is fixed. The corduroy ripple both critics independently traced to macRelief() is gone from every shot; grazing, dawn and overcast now show genuine cast shadows from terrain folds and legible ground instead of a raked moire pattern. The builder found a third contributor neither critic named: the normal gradient used a fixed 0.11 m finite-difference step that undersampled the sub-metre octaves and beat against them, so it now tracks the pixel footprint. Not re-scored yet — a critic re-runs after the gameplay systems land. Known remaining: eye reads greener than the FFXV arid reference, a faint LOD ring is visible in topdown where near-field debris fades, boulders flatten to dark ellipses at 200-400 m, and distant peaks still lack bedding planes.",
-      "next": "Held. No further terrain or atmosphere polish until the gameplay systems are running — user directive. Re-score both after phase 1 functionality is complete.",
+      "captureDir": "captures/2026-08-13T16-43-37_recovered",
+      "gap": "ROUND 2 LANDED. The corduroy ripple both critics independently traced to macRelief() is gone from every shot. Scatter density is up 3-4x inside the playable bowl, storm now shows real standing water, and backlit scrub genuinely glows gold against the dark hillside — the FFXV money shot works. Not re-scored yet.",
+      "next": "Held by directive until gameplay systems are running. Re-score after phase 1 functionality is complete.",
       "eta": "paused by directive",
       "rubric": [
         {
@@ -80,45 +80,45 @@
       "id": "character",
       "name": "Character System",
       "brief": "Original humanoid mesh, skeleton, skinning, PBR materials, idle animation. No copyrighted likeness or ripped rig.",
-      "status": "building",
+      "status": "blocked",
       "iteration": 1,
       "score": null,
       "captureDir": null,
-      "gap": null,
-      "next": "Opus builder running now, in parallel with the Scene Foundation refine. Original humanoid built from scratch — profile-swept skinned mesh, procedural PBR skin/cloth/leather/hair, breathing idle plus rough walk and run. Two new capture poses added: hero (38 deg, 3/4 body, golden hour) and portrait (30 deg, close, judges topology and deformation)."
+      "gap": "HALF-BUILT — the Character builder was killed mid-write by the account spend limit. Its work survived and is committed: a real skinned humanoid with skeleton, outfit, belt and buckle across four modules (build, geom, material, rig). But the portrait shot shows the surface is shredded — heavy mesh artifacts across the whole body, a scribbled face, and detached floating eyeballs. It renders and holds 83-87 fps, so the pipeline is sound; the geometry generation is not finished.",
+      "next": "Needs one finish round on Opus to repair topology and weights. Blocked on the account spend limit being raised — no subagents can be spawned at all right now."
     },
     {
       "id": "environment",
       "name": "Environment, NPCs & Enemies",
       "brief": "NPC and enemy characters reusing the player rig, plus props, landmarks and set dressing that make the basin a place rather than terrain.",
-      "status": "queued",
+      "status": "blocked",
       "iteration": 0,
       "score": null,
       "captureDir": null,
       "gap": null,
-      "next": "Blocked on the Character builder landing — NPCs and enemies reuse its skinned-mesh generator and skeleton rather than duplicating it. Spawns as soon as the rig contract is real."
+      "next": "Blocked on the spend limit, and on the character rig being repaired first — NPCs and enemies reuse its skinned-mesh generator."
     },
     {
       "id": "visual-polish",
       "name": "Story, Quest & Cinematics",
       "brief": "Original Macrion premise, the first major quest, branching dialogue, progression state, and a data-driven cutscene system with spline camera moves.",
-      "status": "building",
+      "status": "blocked",
       "iteration": 1,
       "score": null,
       "captureDir": null,
-      "gap": null,
-      "next": "Two builders running: Game Systems (Sonnet) writing the premise, first quest, dialogue trees and event bus; Cinematics (Haiku) building the cutscene format, spline camera and letterboxing with an intro establishing shot."
+      "gap": "PARTIALLY BUILT then killed by the spend limit. Surviving and committed: story.js, quest.js, dialogue.js, interaction.js, eventBus.js for game systems, plus cutscene.js and cutscene-data.js for cinematics. None verified end to end.",
+      "next": "Needs a finish-and-verify pass. Blocked on the spend limit."
     },
     {
       "id": "interaction",
       "name": "Player, Audio & UI",
       "brief": "Third-person controller with terrain collision, adaptive synthesized score and ambience, and the HUD overlay. Everything audio is generated in code — no samples, no copyrighted music.",
-      "status": "building",
+      "status": "blocked",
       "iteration": 1,
       "score": null,
       "captureDir": null,
-      "gap": null,
-      "next": "Three builders running: Player Controller (Sonnet) for movement, camera rig and collision; Audio (Sonnet) for the adaptive WebAudio score, ambience and SFX; HUD (Haiku) for health, objective, dialogue box, prompts and toasts."
+      "gap": "PARTIALLY BUILT then killed by the spend limit. Surviving and committed: six audio modules (synth, score, music, ambience, sfx, audio) all synthesized in code with no samples, plus hud.js/hud.css and the player controller. None verified end to end.",
+      "next": "Needs a finish-and-verify pass. Blocked on the spend limit."
     }
   ]
 }
