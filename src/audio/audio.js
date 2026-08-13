@@ -8,12 +8,19 @@
  *   synth.js    — DSP toolkit: oscillator voices, noise buffers, ADSR, a
  *                 procedurally-generated convolution reverb, the master bus.
  *   score.js    — composition DATA: scale, chord progression, motifs per
- *                 adaptive state. music.js is the only thing that reads it.
- *   music.js    — adaptive score: five cross-faded layers (drone/pad/melody/
- *                 perc/resolve) that respond to setMusicState() and to
- *                 ctx.hour / ctx.weather continuously.
+ *                 adaptive state, Sarah's theme. music.js/sarah.js are the
+ *                 only things that read it.
+ *   music.js    — adaptive score: explore/alert/combat/boss/resolve, six
+ *                 cross-faded layers (drone/pad/melody/perc/brass/resolve)
+ *                 that respond to setMusicState() and to ctx.hour / ctx.weather
+ *                 continuously. One-shot stingers ride on top of alert/boss
+ *                 entry without ever hard-cutting the bed.
+ *   sarah.js    — Sarah's motif: the emotional spine (docs/STORY.md). Same
+ *                 melodic data, four arrangements — apparition/memory/ghost/
+ *                 wedding. Owned by music.js, exposed through it.
  *   ambience.js — wind/thunder/insects/birds bed driven by world state.
- *   sfx.js      — one-shot physical/UI cues (footsteps, landing, interact...).
+ *   sfx.js      — one-shot physical/UI/combat cues (footsteps, landing,
+ *                 sword swing/hit, enemy hit/death, level up, interact...).
  *
  * Autoplay policy: the AudioContext is created lazily, only from unlock(),
  * which this module wires to the page's first pointerdown/keydown/touchstart
@@ -26,8 +33,12 @@ import { createMusicEngine } from './music.js';
 import { createAmbienceEngine } from './ambience.js';
 import { createSfxEngine } from './sfx.js';
 
-const MUSIC_STATES = ['explore', 'tension', 'combat', 'resolve'];
-const SFX_IDS = ['footstep', 'landing', 'interact', 'confirm', 'dialogueAdvance', 'questAccept', 'questComplete'];
+// Per docs/GAME_DESIGN.md §3: explore -> alert -> combat -> boss -> resolve.
+const MUSIC_STATES = ['explore', 'alert', 'combat', 'boss', 'resolve'];
+const SFX_IDS = [
+  'footstep', 'landing', 'swordSwing', 'swordHit', 'enemyHit', 'enemyDeath',
+  'interact', 'confirm', 'dialogueAdvance', 'questAccept', 'questComplete', 'levelUp',
+];
 const GESTURE_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
 
 export function createAudio(ctx) {
@@ -39,22 +50,63 @@ export function createAudio(ctx) {
   let unlocked = false;
   let gestureBound = false;
 
+  /**
+   * Wires the audio system to the game event bus. `game.js` is a stub as of
+   * this writing (see src/game/game.js), so every one of these is a guess at
+   * the eventual contract — each is independently optional-chained/try-caught
+   * so a missing, partial, or differently-shaped bus never throws. When the
+   * Game/Quest builder lands, wire emit() calls to these names, OR just call
+   * the equivalent method directly on window.MACRION.systems.audio — both
+   * paths work identically since this function only ever calls the same
+   * public methods returned at the bottom of this file.
+   *
+   * Expected payloads (best-effort, all optional):
+   *   'area:enter'      { hasEnemies: boolean }        -> alert if hasEnemies, else explore
+   *   'boss:enter'                                     -> boss
+   *   'combat:start' / 'combat:engage'                 -> combat
+   *   'combat:end' / 'combat:disengage'                -> alert (still in the area) then explore
+   *   'boss:defeat' / 'boss:complete'                  -> resolve
+   *   'enemy:hit'        { position? }                 -> sfx enemyHit
+   *   'enemy:death'      { position? }                 -> sfx enemyDeath
+   *   'player:levelup'                                 -> sfx levelUp
+   *   'quest:accept' / 'quest:advance' (non-final) / 'quest:complete' (or final:true) — as before
+   *   'sarah:apparition'                                -> Sarah's theme, first hearing
+   *   'story:beat' / 'sarah:memory' { intensity? }      -> Sarah's theme, memory arrangement
+   *   'story:wedding' / 'sarah:wedding'                 -> Sarah's theme, full resolution + music resolve
+   *   'story:proximity' { value: 0..1 }                 -> setStoryProximity (ghost motif in explore)
+   */
   function wireGameEvents() {
-    // Guarded: game.js may still be the stub, or absent entirely, or land
-    // later in the session. `on` is optional-chained at every step so a
-    // missing/partial event bus never throws.
     const game = ctx.engine?.systems?.game;
-    const onQuestPayload = (payload) => {
-      const p = payload || {};
+    const safe = (fn) => { try { fn(); } catch { /* a bad game-event handler must never break the frame */ } };
+    const on = (evt, fn) => { try { game?.on?.(evt, (payload) => safe(() => fn(payload || {}))); } catch { /* no-op */ } };
+
+    on('quest:advance', (p) => {
       const isComplete = p.complete === true || p.status === 'complete' || p.final === true || p.type === 'complete';
-      try {
-        if (isComplete) { play('questComplete'); }
-        else { play('questAccept'); }
-      } catch { /* never let a game-event handler throw into the caller */ }
-    };
-    try { game?.on?.('quest:advance', onQuestPayload); } catch { /* no-op */ }
-    try { game?.on?.('quest:accept', () => play('questAccept')); } catch { /* no-op */ }
-    try { game?.on?.('quest:complete', () => play('questComplete')); } catch { /* no-op */ }
+      play(isComplete ? 'questComplete' : 'questAccept');
+    });
+    on('quest:accept', () => play('questAccept'));
+    on('quest:complete', () => play('questComplete'));
+
+    on('area:enter', (p) => setMusicState(p.hasEnemies ? 'alert' : 'explore'));
+    on('boss:enter', () => setMusicState('boss'));
+    on('combat:start', () => setMusicState('combat'));
+    on('combat:engage', () => setMusicState('combat'));
+    on('combat:end', () => setMusicState('alert'));
+    on('combat:disengage', () => setMusicState('alert'));
+    on('boss:defeat', () => setMusicState('resolve'));
+    on('boss:complete', () => setMusicState('resolve'));
+
+    on('enemy:hit', (p) => play('enemyHit', p));
+    on('enemy:death', (p) => play('enemyDeath', p));
+    on('player:levelup', (p) => play('levelUp', p));
+    on('player:attack', (p) => play('swordSwing', p));
+
+    on('sarah:apparition', () => music?.cueSarahApparition?.());
+    on('story:beat', (p) => music?.cueSarahMemory?.(p.intensity));
+    on('sarah:memory', (p) => music?.cueSarahMemory?.(p.intensity));
+    on('story:wedding', () => { music?.cueSarahWedding?.(); setMusicState('resolve'); });
+    on('sarah:wedding', () => { music?.cueSarahWedding?.(); setMusicState('resolve'); });
+    on('story:proximity', (p) => music?.setStoryProximity?.(p.value));
   }
 
   function init() {
@@ -115,6 +167,12 @@ export function createAudio(ctx) {
     } catch { /* swallow */ }
   }
 
+  // --- Sarah's motif — direct audition/story-hook surface. ---
+  function sarahApparition() { try { if (unlocked) music?.cueSarahApparition?.(); } catch { /* no-op */ } }
+  function sarahMemory(intensity) { try { if (unlocked) music?.cueSarahMemory?.(intensity); } catch { /* no-op */ } }
+  function sarahWedding() { try { if (unlocked) { music?.cueSarahWedding?.(); setMusicState('resolve'); } } catch { /* no-op */ } }
+  function setStoryProximity(v) { try { if (unlocked) music?.setStoryProximity?.(v); } catch { /* no-op */ } }
+
   function update(c) {
     if (!unlocked || !actx) return;
     try {
@@ -130,6 +188,15 @@ export function createAudio(ctx) {
     play,
     setMusicState,
     unlock,
+
+    // Sarah's motif — see sarah.js. sarahMemory(intensity=0..1) plays the
+    // "returns transformed" arrangement; setStoryProximity(0..1) controls how
+    // often a ghost fragment of the theme surfaces inside the `explore` bed.
+    sarahApparition,
+    sarahMemory,
+    sarahWedding,
+    setStoryProximity,
+    getStoryProximity: () => music?.getStoryProximity?.() ?? 0,
 
     // --- Debug / audition surface, reachable as window.MACRION.systems.audio ---
     // Static — discoverable even before the AudioContext exists.

@@ -145,6 +145,31 @@ export function toBus(node, bus, sendAmount = 0.25) {
   }
 }
 
+/**
+ * Build a 3D PannerNode (HRTF) for a world-space one-shot. Kept as a plain
+ * helper (not a persistent wrapper) so callers can fold it into a voice's own
+ * disposal timer instead of leaking a node per play — see tone()/noiseHit()/
+ * toneSweep() `position` option below, which is the supported path. The
+ * standalone createPositional() export remains for callers that manage their
+ * own node lifetime.
+ */
+function make3DPanner(actx, pos = {}) {
+  const p = actx.createPanner();
+  p.panningModel = 'HRTF';
+  p.distanceModel = 'inverse';
+  p.refDistance = 2;
+  p.maxDistance = 200;
+  p.rolloffFactor = 1.1;
+  if (p.positionX) {
+    p.positionX.value = pos.x ?? 0;
+    p.positionY.value = pos.y ?? 0;
+    p.positionZ.value = pos.z ?? 0;
+  } else if (p.setPosition) {
+    p.setPosition(pos.x ?? 0, pos.y ?? 0, pos.z ?? 0);
+  }
+  return p;
+}
+
 // ---------------------------------------------------------------------------
 // Envelope helper
 // ---------------------------------------------------------------------------
@@ -194,7 +219,9 @@ export function releaseEnvelope(gainParam, at, release = 0.5) {
  * spec: {
  *   type, freq, detune=0, start, attack, decay, sustain, release, sustainSeconds,
  *   gain=0.3, filterType='lowpass', filterFreq=2000, filterQ=0.4,
- *   pan=0, partials=[{ratio,gainMul,type}], destinations:[node,...], send=0.25, bus,
+ *   pan=0, position={x,y,z} (3D — overrides pan, HRTF), partials=[{ratio,gainMul,type}],
+ *   vibrato={rate=5,depth=6,delay=0.25} (cents of detune modulation, for expressive/vocal
+ *     lines — used sparingly; most SFX and pads omit it), bus, send=0.25,
  * }
  * Returns { stop(atTime), gainNode, endTime }.
  */
@@ -203,7 +230,7 @@ export function tone(actx, spec) {
     type = 'sine', freq = 220, detune = 0, start = actx.currentTime,
     attack = 0.02, decay = 0.2, sustain = 0.6, release = 0.6, sustainSeconds = 0.6,
     gain = 0.25, filterType = 'lowpass', filterFreq = 4000, filterQ = 0.3,
-    pan = 0, partials = [], bus, send = 0.25,
+    pan = 0, position = null, partials = [], vibrato = null, bus, send = 0.25,
   } = spec;
 
   const g = actx.createGain();
@@ -214,9 +241,15 @@ export function tone(actx, spec) {
   filter.frequency.value = filterFreq;
   filter.Q.value = filterQ;
 
-  const panner = actx.createStereoPanner ? actx.createStereoPanner() : null;
-  if (panner) panner.pan.value = Math.max(-1, Math.min(1, pan));
+  const panner = position
+    ? make3DPanner(actx, position)
+    : (actx.createStereoPanner ? actx.createStereoPanner() : null);
+  if (!position && panner) panner.pan.value = Math.max(-1, Math.min(1, pan));
 
+  // Optional vibrato LFO: one shared low-frequency oscillator modulating every
+  // partial's detune (cents) after a short delay (real vibrato eases in, it
+  // doesn't start on the attack). Cleaned up alongside the rest of the voice.
+  let lfo = null, lfoGain = null;
   const oscs = [];
   const mkOsc = (f, det, oscType, ampMul) => {
     const o = actx.createOscillator();
@@ -237,6 +270,19 @@ export function tone(actx, spec) {
     mkOsc(freq * (p.ratio ?? 2), (p.detune ?? 0), p.type ?? type, p.gainMul ?? 0.3);
   }
 
+  if (vibrato) {
+    const { rate = 5, depth = 6, delay = 0.25 } = vibrato;
+    lfo = actx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = rate;
+    lfoGain = actx.createGain();
+    lfoGain.gain.setValueAtTime(0, start);
+    lfoGain.gain.linearRampToValueAtTime(depth, start + Math.max(0.02, delay));
+    lfo.connect(lfoGain);
+    for (const o of oscs) lfoGain.connect(o.detune);
+    lfo.start(start);
+  }
+
   filter.connect(g);
   if (panner) { g.connect(panner); toBus(panner, bus, send); }
   else { toBus(g, bus, send); }
@@ -247,9 +293,13 @@ export function tone(actx, spec) {
 
   const stopAt = endTime ?? (start + 30);
   for (const o of oscs) o.stop(stopAt + 0.05);
+  lfo?.stop(stopAt + 0.05);
   const cleanupDelay = Math.max(0, (stopAt + 0.1 - actx.currentTime)) * 1000;
   setTimeout(() => {
-    try { filter.disconnect(); g.disconnect(); panner?.disconnect(); } catch { /* already gone */ }
+    try {
+      filter.disconnect(); g.disconnect(); panner?.disconnect();
+      lfo?.disconnect(); lfoGain?.disconnect();
+    } catch { /* already gone */ }
   }, cleanupDelay + 50);
 
   return {
@@ -258,6 +308,7 @@ export function tone(actx, spec) {
     stop(atTime = actx.currentTime, releaseTime = 0.3) {
       releaseEnvelope(g.gain, atTime, releaseTime);
       for (const o of oscs) { try { o.stop(atTime + releaseTime + 0.05); } catch { /* already stopped */ } }
+      try { lfo?.stop(atTime + releaseTime + 0.05); } catch { /* already stopped */ }
     },
   };
 }
@@ -265,13 +316,13 @@ export function tone(actx, spec) {
 /**
  * A short pitch-swept tone — birdsong, cricket chirps, UI whooshes.
  * spec: { type, freqStart, freqEnd, start, dur=0.25, attack, release, gain,
- *   filterFreq, filterQ, pan, bus, send }
+ *   filterFreq, filterQ, pan, position={x,y,z}, bus, send }
  */
 export function toneSweep(actx, spec) {
   const {
     type = 'sine', freqStart = 2000, freqEnd = 3000, start = actx.currentTime,
     dur = 0.25, attack = 0.015, release = 0.15, gain = 0.15,
-    filterFreq = 6000, filterQ = 0.5, pan = 0, bus, send = 0.15,
+    filterFreq = 6000, filterQ = 0.5, pan = 0, position = null, bus, send = 0.15,
   } = spec;
 
   const osc = actx.createOscillator();
@@ -287,8 +338,10 @@ export function toneSweep(actx, spec) {
   const g = actx.createGain();
   g.gain.value = 0.0001;
 
-  const panner = actx.createStereoPanner ? actx.createStereoPanner() : null;
-  if (panner) panner.pan.value = Math.max(-1, Math.min(1, pan));
+  const panner = position
+    ? make3DPanner(actx, position)
+    : (actx.createStereoPanner ? actx.createStereoPanner() : null);
+  if (!position && panner) panner.pan.value = Math.max(-1, Math.min(1, pan));
 
   osc.connect(filter);
   filter.connect(g);
@@ -319,13 +372,13 @@ export function toneSweep(actx, spec) {
 
 /**
  * spec: { buffer, start, attack, decay(=release), gain, filterType, filterFreq,
- *   filterQ, pan, playbackRate=1, bus, send }
+ *   filterQ, pan, position={x,y,z}, playbackRate=1, bus, send }
  */
 export function noiseHit(actx, spec) {
   const {
     buffer, start = actx.currentTime, attack = 0.002, decay = 0.12,
     gain = 0.4, filterType = 'bandpass', filterFreq = 1200, filterQ = 0.8,
-    pan = 0, playbackRate = 1, bus, send = 0.2,
+    pan = 0, position = null, playbackRate = 1, bus, send = 0.2,
   } = spec;
 
   const src = actx.createBufferSource();
@@ -340,8 +393,10 @@ export function noiseHit(actx, spec) {
   const g = actx.createGain();
   g.gain.value = 0.0001;
 
-  const panner = actx.createStereoPanner ? actx.createStereoPanner() : null;
-  if (panner) panner.pan.value = Math.max(-1, Math.min(1, pan));
+  const panner = position
+    ? make3DPanner(actx, position)
+    : (actx.createStereoPanner ? actx.createStereoPanner() : null);
+  if (!position && panner) panner.pan.value = Math.max(-1, Math.min(1, pan));
 
   src.connect(filter);
   filter.connect(g);
@@ -365,7 +420,13 @@ export function noiseHit(actx, spec) {
   return { endTime: stopAt };
 }
 
-/** 3D positional wrapper: routes a mono source through a PannerNode (HRTF). */
+/**
+ * 3D positional wrapper: routes a mono source through a PannerNode (HRTF).
+ * Prefer the `position` option on tone()/noiseHit()/toneSweep() instead — that
+ * path folds the panner into the voice's own disposal timer. This standalone
+ * version returns a persistent node the caller must disconnect itself; kept
+ * only for callers that genuinely need a long-lived positional bus.
+ */
 export function createPositional(actx, bus, send = 0.15) {
   const panner = actx.createPanner();
   panner.panningModel = 'HRTF';

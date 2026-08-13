@@ -1,7 +1,8 @@
 /**
  * Macrion — conversation state machine. Drives both NPC talk trees and
- * object flavor text (the wardcairn) through the same data shape from
- * story.js's CONVERSATIONS.
+ * object/landmark flavor text through the same data shape from
+ * story.js's CONVERSATIONS. Content-blind: this file knows nothing about
+ * Oz, Melina, the Great Head or Sarah — that's all in story.js.
  *
  * This module never touches ctx.engine.systems.hud itself — it only returns
  * line data and lets the caller (game.js) push it through
@@ -19,6 +20,9 @@
  * entry whose when(flags) is true (a `next` jump bypasses the scan and goes
  * straight to that entry id). Every conversation should end its scan list
  * with a `when: () => true` catch-all.
+ *
+ * Bus events: 'dialogue:start' {convId, entryId}, 'dialogue:line' {convId,
+ * entryId} on choice-driven advance, 'dialogue:end' {convId} on close.
  */
 export function createDialogueSystem({ conversations, bus, getFlags, applyEffect }) {
   let open = null; // { convId, entryId }
@@ -44,7 +48,7 @@ export function createDialogueSystem({ conversations, bus, getFlags, applyEffect
     if (!entry) return null;
     open = { convId, entryId: entry.id };
     applyEffect(entry.effect, ctx);
-    bus.emit('dialogue:open', { convId, entryId: entry.id });
+    bus.emit('dialogue:start', { convId, entryId: entry.id });
     return toLines(entry);
   }
 
@@ -79,7 +83,7 @@ export function createDialogueSystem({ conversations, bus, getFlags, applyEffect
     if (!open) return;
     const convId = open.convId;
     open = null;
-    bus.emit('dialogue:close', { convId });
+    bus.emit('dialogue:end', { convId });
   }
 
   function isOpen() { return !!open; }

@@ -6,41 +6,89 @@
  *
  * This module does NOT decide what pressing E *does* — that's quest/story
  * logic and stays in game.js. It only tells the caller "the player pressed
- * interact while standing near X" via the onInteract callback.
+ * interact while standing near X" via the onInteract callback. Content-blind:
+ * nothing here knows Melina from the Great Head, only `kind` and `marker`.
  *
- * It also owns simple placeholder markers for the NPC and the wardcairn —
- * nobody else in the tree is responsible for quest-specific props, and
- * BUILD_PLAN's "roughed in" bar covers exactly this: cheap, legible,
- * replaceable geometry, not final art. Markers are gated behind
- * `engine.mode !== 'shot'` per the determinism contract, so they cannot
- * perturb a capture no matter where they sit in world space — they are
- * invisible in the only mode a capture ever runs in.
+ * Interactable data shape (see story.js INTERACTABLES):
+ *   { id, kind: 'npc'|'item'|'object'|'landmark', name, pos:{x,z}, radius,
+ *     marker?: 'giant'|'apparition',   // override the default kind->marker pick
+ *     ghostly?: true,                  // shorthand for marker:'apparition'
+ *     requires?: (flags) => boolean,   // gates BOTH visibility and proximity
+ *     conversation?: string, itemId?: string, actionByObjective?: {...} }
+ *
+ * `requires` lets story content stage reveals data-side — e.g. the Great Head
+ * has no presence in the world until the flute has been played, and Sarah's
+ * apparition has none until the player is on the mainland. No machinery
+ * change is needed to add a new gated interactable; a level editor authors
+ * it by writing the predicate.
+ *
+ * Markers are placeholder debug geometry — "roughed in", not final art — and
+ * are gated behind `engine.mode !== 'shot'` per the determinism contract, so
+ * they cannot perturb a capture no matter where they sit in world space:
+ * they are invisible in the only mode a capture ever runs in.
  */
 import * as THREE from 'three';
 
-function buildNpcMarker() {
+function buildHumanMarker(bodyColor = 0x6b5a45, headColor = 0xcaa27a, opacity = 1) {
   const g = new THREE.Group();
+  const transparent = opacity < 1;
   const robe = new THREE.Mesh(
     new THREE.ConeGeometry(0.34, 1.5, 8),
-    new THREE.MeshStandardMaterial({ color: 0x6b5a45, roughness: 0.85 })
+    new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.85, transparent, opacity, depthWrite: !transparent })
   );
   robe.position.y = 0.75;
-  robe.castShadow = true;
-  robe.receiveShadow = true;
+  robe.castShadow = !transparent;
+  robe.receiveShadow = !transparent;
   const head = new THREE.Mesh(
     new THREE.SphereGeometry(0.18, 10, 8),
-    new THREE.MeshStandardMaterial({ color: 0xcaa27a, roughness: 0.7 })
+    new THREE.MeshStandardMaterial({ color: headColor, roughness: 0.7, transparent, opacity, depthWrite: !transparent })
   );
   head.position.y = 1.62;
-  head.castShadow = true;
+  head.castShadow = !transparent;
   g.add(robe, head);
   return g;
 }
 
-function buildCairnMarker() {
+/** Sarah — ghostly from the very first appearance, per STORY.md. Pale,
+ * translucent, no cast shadow (an apparition casts no shadow). */
+function buildApparitionMarker() {
+  return buildHumanMarker(0xdce8f5, 0xf3f7ff, 0.42);
+}
+
+/** The Great Head of Macrion — giant, ghostly, immensely powerful. Scaled
+ * well above human height so it reads as a spectacle even as a placeholder. */
+function buildGiantMarker() {
+  const g = new THREE.Group();
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(1.6, 16, 12),
+    new THREE.MeshStandardMaterial({
+      color: 0xcfe0f2, roughness: 0.55, transparent: true, opacity: 0.55, depthWrite: false,
+      emissive: 0x3a5a7a, emissiveIntensity: 0.4,
+    })
+  );
+  head.position.y = 3.2;
+  g.add(head);
+  return g;
+}
+
+/** A carried or ground item — small, distinct, catches the eye. */
+function buildItemMarker() {
+  const g = new THREE.Group();
+  const stone = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.16, 0),
+    new THREE.MeshStandardMaterial({ color: 0xd8c48a, roughness: 0.4, metalness: 0.15 })
+  );
+  stone.position.y = 0.55;
+  stone.castShadow = true;
+  g.add(stone);
+  return g;
+}
+
+/** A notable feature — a landmark, a prop, an object worth pressing E on. */
+function buildPropMarker() {
   const g = new THREE.Group();
   const stoneMat = new THREE.MeshStandardMaterial({ color: 0x54524c, roughness: 0.92 });
-  const sizes = [0.85, 0.66, 0.48, 0.32];
+  const sizes = [0.85, 0.66, 0.48];
   let y = 0;
   for (let i = 0; i < sizes.length; i++) {
     const s = sizes[i];
@@ -52,40 +100,44 @@ function buildCairnMarker() {
     g.add(box);
     y += s * 0.42;
   }
-  const ember = new THREE.Mesh(
-    new THREE.SphereGeometry(0.14, 10, 8),
-    new THREE.MeshStandardMaterial({
-      color: 0x2a1c14, roughness: 0.6, emissive: 0x000000, emissiveIntensity: 0,
-    })
-  );
-  ember.position.y = y + 0.08;
-  ember.name = 'ember';
-  g.add(ember);
-  g.userData.ember = ember;
   return g;
 }
 
-export function createInteractionSystem(ctx, { interactables, bus, getPlayerPos, onInteract }) {
+function buildMarker(it) {
+  const kind = it.marker ?? (it.ghostly ? 'apparition' : it.kind);
+  if (kind === 'giant') return buildGiantMarker();
+  if (kind === 'apparition') return buildApparitionMarker();
+  if (kind === 'item') return buildItemMarker();
+  if (kind === 'npc') return buildHumanMarker();
+  return buildPropMarker(); // object / landmark / unknown — generic prop
+}
+
+export function createInteractionSystem(ctx, { interactables, bus, getPlayerPos, getFlags, onInteract }) {
   const group = new THREE.Group();
   group.name = 'game-interactables';
   group.visible = false;
 
   const markers = new Map(); // interactable id -> Object3D
   for (const it of interactables) {
-    const marker = it.kind === 'npc' ? buildNpcMarker() : buildCairnMarker();
+    const marker = buildMarker(it);
     const h = ctx.terrain?.heightAt?.(it.pos.x, it.pos.z) ?? 0;
     marker.position.set(it.pos.x, h, it.pos.z);
     group.add(marker);
     markers.set(it.id, marker);
   }
 
-  let target = null; // currently in-range interactable, or null
+  let target = null; // currently in-range, satisfied-requirement interactable, or null
+
+  function available(it) {
+    return !it.requires || it.requires(getFlags?.() ?? {});
+  }
 
   function nearest() {
     const p = getPlayerPos();
     if (!p) return null;
     let best = null, bestD = Infinity;
     for (const it of interactables) {
+      if (!available(it)) continue;
       const d = Math.hypot(p.x - it.pos.x, p.z - it.pos.z);
       if (d <= it.radius && d < bestD) { best = it; bestD = d; }
     }
@@ -102,23 +154,17 @@ export function createInteractionSystem(ctx, { interactables, bus, getPlayerPos,
   return {
     object3D: group,
     current() { return target; },
-    setCairnLit(lit) {
-      const ember = markers.get('wardcairn')?.userData.ember;
-      if (!ember) return;
-      ember.material.emissive.setHex(lit ? 0xff7a2a : 0x000000);
-      ember.material.emissiveIntensity = lit ? 1.4 : 0;
-    },
     update(c) {
-      group.visible = c.engine.mode !== 'shot';
-      // gentle ember flicker once lit, driven by the pinnable clock
-      const ember = markers.get('wardcairn')?.userData.ember;
-      if (ember && ember.material.emissiveIntensity > 0) {
-        ember.material.emissiveIntensity = 1.2 + 0.4 * Math.sin(c.time * 6.0);
+      const shot = c.engine.mode === 'shot';
+      for (const it of interactables) {
+        const m = markers.get(it.id);
+        if (m) m.visible = !shot && available(it);
       }
+      group.visible = !shot;
       const next = nearest();
       if (next?.id !== target?.id) {
         target = next;
-        bus.emit('interact:target', target ? { id: target.id, name: target.name } : null);
+        bus.emit('interact:target', target ? { id: target.id, name: target.name, kind: target.kind } : null);
       }
     },
   };

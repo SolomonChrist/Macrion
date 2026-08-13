@@ -195,10 +195,9 @@ export function createHUD(ctx) {
     toast(msg) {
       if (!msg) return;
       // Toast lifetime is deterministic and driven by ctx.time in update()
-      // For now, store current ctx.time (will be set on first update after toast creation)
       toasts.push({
         text: msg,
-        created: ctx.time,
+        created: currentCtx.time,
       });
     },
 

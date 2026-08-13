@@ -330,31 +330,45 @@ export function surfaceNets(sample, bmin, bmax, res, opts = {}) {
 
   const tris = [];
   const cv = (i, j, k) => cellVert[i + cx * (j + cy * k)];
-  const quad = (a, b, c, d) => {
+  /**
+   * Emit the quad dual to a sign-changing grid edge.
+   *
+   * `flip` MUST be conditioned on the DIRECTION of the crossing. The four
+   * cells around an edge are always listed in the same rotational order, so if
+   * the winding is not reversed when the field goes +->- instead of -->+, half
+   * of every closed surface comes out inverted: the front of the mesh winds one
+   * way, the back the other. Under backface culling that reads as a shredded,
+   * see-through shell — which is exactly what the previous build rendered.
+   */
+  const quad = (a, b, c, d, flip) => {
     if (a < 0 || b < 0 || c < 0 || d < 0) return;
-    tris.push(a, b, c, a, c, d);
+    if (flip) tris.push(a, c, b, a, d, c);
+    else tris.push(a, b, c, a, c, d);
   };
   for (let k = 1; k < cz; k++) {
     for (let j = 1; j < cy; j++) {
       for (let i = 0; i < cx; i++) {
-        if ((at(i, j, k) < 0) !== (at(i + 1, j, k) < 0))
-          quad(cv(i, j - 1, k - 1), cv(i, j, k - 1), cv(i, j, k), cv(i, j - 1, k));
+        const s0 = at(i, j, k) < 0, s1 = at(i + 1, j, k) < 0;
+        if (s0 !== s1)
+          quad(cv(i, j - 1, k - 1), cv(i, j, k - 1), cv(i, j, k), cv(i, j - 1, k), !s0);
       }
     }
   }
   for (let k = 1; k < cz; k++) {
     for (let j = 0; j < cy; j++) {
       for (let i = 1; i < cx; i++) {
-        if ((at(i, j, k) < 0) !== (at(i, j + 1, k) < 0))
-          quad(cv(i - 1, j, k - 1), cv(i, j, k - 1), cv(i, j, k), cv(i - 1, j, k));
+        const s0 = at(i, j, k) < 0, s1 = at(i, j + 1, k) < 0;
+        if (s0 !== s1)
+          quad(cv(i - 1, j, k - 1), cv(i, j, k - 1), cv(i, j, k), cv(i - 1, j, k), s0);
       }
     }
   }
   for (let j = 1; j < cy; j++) {
     for (let k = 0; k < cz; k++) {
       for (let i = 1; i < cx; i++) {
-        if ((at(i, j, k) < 0) !== (at(i, j, k + 1) < 0))
-          quad(cv(i - 1, j - 1, k), cv(i, j - 1, k), cv(i, j, k), cv(i - 1, j, k));
+        const s0 = at(i, j, k) < 0, s1 = at(i, j, k + 1) < 0;
+        if (s0 !== s1)
+          quad(cv(i - 1, j - 1, k), cv(i, j - 1, k), cv(i, j, k), cv(i - 1, j, k), !s0);
       }
     }
   }
