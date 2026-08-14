@@ -109,14 +109,18 @@ vec3 mBump( vec3 N, vec3 wp, float h, float scale ) {
  *      footprint grows, so the same shader stays clean at any distance.
  */
 float mHeight( int m, vec3 p, float det ) {
-  if ( m == 0 ) {                                     // skin: pores + folds
-    return mNoise( p * 200.0 ) * 0.22 * det + mFbm( p * 46.0, 2 ) * 0.32 + mFbm( p * 11.0, 2 ) * 0.35;
+  if ( m == 0 ) {                                     // skin: soft, almost none
+    // ANIME SKIN IS SMOOTH. The pore band that a realistic face needs reads as
+    // salt-and-pepper mottling on a stylized head, because there is no other
+    // detail near it to hide behind. What survives is only the broad form
+    // variation that keeps the cheek from being a flat swatch.
+    return mFbm( p * 34.0, 2 ) * 0.16 + mFbm( p * 9.0, 2 ) * 0.30;
   } else if ( m == 1 || m == 5 || m == 8 || m == 9 ) { // woven cloth
     // sin*sin puts a checker lattice at pi/f metres; at f = 205 that was a 15 mm
     // cell, which at full bump amplitude read as knitted chainmail. Finer and
     // much shallower — the roughness break-up is what sells cloth, not relief.
-    float weave = ( sin( p.x * 330.0 ) * sin( p.y * 330.0 ) * 0.11
-                  + sin( ( p.y + p.z ) * 268.0 ) * 0.07 ) * det;
+    float weave = ( sin( p.x * 330.0 ) * sin( p.y * 330.0 ) * 0.055
+                  + sin( ( p.y + p.z ) * 268.0 ) * 0.035 ) * det;
     float quilt = smoothstep( 0.42, 0.5, abs( fract( p.x * 8.5 + p.z * 2.0 ) - 0.5 ) ) * 0.32;
     return weave + mFbm( p * 58.0, 2 ) * 0.30 + quilt;
   } else if ( m == 2 || m == 7 ) {                    // leather grain + creases
@@ -124,7 +128,10 @@ float mHeight( int m, vec3 p, float det ) {
     float crease = smoothstep( 0.30, 0.0, mCell( p * 24.0 ) );
     return grain * 0.40 + crease * 0.55 + mFbm( p * 46.0, 2 ) * 0.18;
   } else if ( m == 4 ) {                              // hair: stretched strands
-    return mFbm( vec3( p.x * 210.0, p.y * 52.0, p.z * 62.0 ), 3 ) * 0.85;
+    // The 210 cyc/m band across x was the glitter on the hair: at portrait range
+    // it beat against the pixel grid and every other fragment caught a specular
+    // hit. Sculpted anime hair wants long directional bands, not fibres.
+    return mFbm( vec3( p.x * 74.0, p.y * 26.0, p.z * 30.0 ), 2 ) * 0.62;
   } else if ( m == 3 ) {                              // metal: fine scratches
     return mFbm( vec3( p.x * 260.0, p.y * 46.0, p.z * 260.0 ), 2 ) * 0.35 * det
          + mFbm( p * 30.0, 2 ) * 0.25;
@@ -142,7 +149,7 @@ void mParams( int m, out vec3 alb, out float rough, out float metal, out float t
   else if ( m == 1 ) {   alb = vec3( 0.0400, 0.0455, 0.0362 ); rough = 0.88; metal = 0.0; trans = 0.16; }
   else if ( m == 2 ) {   alb = vec3( 0.0345, 0.0192, 0.0122 ); rough = 0.44; metal = 0.03; }
   else if ( m == 3 ) {   alb = vec3( 0.560, 0.396, 0.152 ); rough = 0.30; metal = 1.0; }
-  else if ( m == 4 ) {   alb = vec3( 0.0168, 0.0110, 0.0080 ); rough = 0.31; metal = 0.0; trans = 0.30; }
+  else if ( m == 4 ) {   alb = vec3( 0.0232, 0.0146, 0.0108 ); rough = 0.34; metal = 0.0; trans = 0.26; }
   else if ( m == 5 ) {   alb = vec3( 0.0700, 0.0605, 0.0470 ); rough = 0.84; metal = 0.0; trans = 0.12; }
   else if ( m == 6 ) {   alb = vec3( 0.700, 0.660, 0.620 ); rough = 0.09; metal = 0.0; }
   else if ( m == 7 ) {   alb = vec3( 0.0205, 0.0139, 0.0105 ); rough = 0.40; metal = 0.02; }
@@ -231,8 +238,8 @@ float macFW; float macDet;`)
     // change does not silently shift every material's base roughness
     if ( macM == 2 || macM == 7 ) r += ( h - 0.40 ) * 0.24;           // leather highs polish
     else if ( macM == 1 || macM == 5 || macM == 8 || macM == 9 ) r += ( h - 0.30 ) * 0.16;
-    else if ( macM == 0 ) r += ( h - 0.45 ) * 0.20;
-    else if ( macM == 4 ) r += ( h - 0.42 ) * 0.26;
+    else if ( macM == 0 ) r += ( h - 0.22 ) * 0.20;
+    else if ( macM == 4 ) r += ( h - 0.23 ) * 0.30;
     else if ( macM == 3 ) r += ( h - 0.30 ) * 0.34;
     r += ( 1.0 - vBakedAO ) * 0.10;                                    // crevices stay matte
     roughnessFactor = clamp( mix( r, r * 0.42 + 0.03, uWet * 0.9 ), 0.035, 1.0 );
@@ -251,8 +258,8 @@ float macFW; float macDet;`)
     float amp =
       ( macM == 2 || macM == 7 ) ? 0.0110 :
       ( macM == 1 || macM == 5 || macM == 8 || macM == 9 ) ? 0.0075 :
-      ( macM == 0 ) ? 0.0030 :
-      ( macM == 4 ) ? 0.0180 :
+      ( macM == 0 ) ? 0.0014 :
+      ( macM == 4 ) ? 0.0062 :
       ( macM == 3 ) ? 0.0040 : 0.0;
     amp *= macDet;   // no bump at all once the detail is smaller than a pixel
     if ( amp > 0.0 ) normal = mBump( normal, - vViewPosition, h, amp * ( 1.0 - uWet * 0.6 ) );

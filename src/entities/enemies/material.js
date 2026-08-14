@@ -184,7 +184,7 @@ void eParams( int m, out vec3 alb, out float rough, out float metal, out float t
   else if ( m == 3 ) { alb = vec3( 0.560, 0.520, 0.410 ); rough = 0.17; trans = 0.34; }
   else if ( m == 4 ) { alb = vec3( 0.0250, 0.0225, 0.0195 ); rough = 0.22; }
   else if ( m == 5 ) { alb = vec3( 0.0120, 0.0020, 0.0015 ); rough = 0.10; }
-  else if ( m == 6 ) { alb = vec3( 0.0340, 0.0062, 0.0068 ); rough = 0.30; trans = 0.22; }
+  else if ( m == 6 ) { alb = vec3( 0.0290, 0.0055, 0.0060 ); rough = 0.30; trans = 0.06; }
   else               { alb = vec3( 0.0480, 0.0440, 0.0360 ); rough = 0.40; }
 }
 `;

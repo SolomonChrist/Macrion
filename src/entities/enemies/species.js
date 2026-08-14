@@ -45,7 +45,7 @@ const BASE = {
   browHeavy: 1.00,
 
   // ---- weapons ----
-  teeth: { upper: 9, lower: 8, len: 0.034, w: 0.0070, tusk: 0.042, arc: 0.62 },
+  teeth: { upper: 9, lower: 8, len: 0.046, w: 0.0092, tusk: 0.055, arc: 0.62 },
   claw: { len: 0.055, w: 0.011, count: 3 },
   spines: { count: 8, h: 0.090, r: 0.022, from: 0.26, to: 0.98 },
   horn: { len: 0.075, r: 0.022, sweep: 0.55 },
@@ -112,7 +112,7 @@ export const SPECIES = {
     torsoW: 0.80, torsoD: 0.84, armGirth: 0.74, legGirth: 0.78, belly: 0.72,
     headScale: 0.92, skullLen: 1.34, jawW: 0.84, jawOpen: 0.040, browHeavy: 0.62,
     tail: { len: 0.92, thick: 0.040, drop: 0.06 },
-    teeth: { upper: 11, lower: 10, len: 0.040, w: 0.0060, tusk: 0.030, arc: 0.70 },
+    teeth: { upper: 11, lower: 10, len: 0.054, w: 0.0078, tusk: 0.040, arc: 0.70 },
     claw: { len: 0.082, w: 0.010, count: 3 },
     spines: { count: 11, h: 0.125, r: 0.020, from: 0.20, to: 1.00 },
     horn: { len: 0.105, r: 0.019, sweep: 0.75 },
@@ -135,7 +135,7 @@ export const SPECIES = {
     torsoW: 1.34, torsoD: 1.26, armGirth: 1.34, legGirth: 1.30, belly: 1.26,
     headScale: 1.22, skullLen: 0.92, jawW: 1.28, jawOpen: 0.036, browHeavy: 1.10,
     tail: { len: 0.46, thick: 0.070, drop: 0.14 },
-    teeth: { upper: 8, lower: 7, len: 0.042, w: 0.0100, tusk: 0.078, arc: 0.58 },
+    teeth: { upper: 8, lower: 7, len: 0.056, w: 0.0132, tusk: 0.098, arc: 0.58 },
     claw: { len: 0.066, w: 0.016, count: 3 },
     spines: { count: 9, h: 0.120, r: 0.034, from: 0.24, to: 0.96 },
     horn: { len: 0.130, r: 0.034, sweep: 0.40 },

@@ -293,7 +293,16 @@ export function createCutscene(ctx) {
       }
 
       state.playing = true;
-      state.startTime = ctx.time;
+      // NOT `ctx.time`: `ctx` is the object captured once at createCutscene()
+      // construction time (main.js calls this before engine.start()), so its
+      // `.time` is permanently frozen near 0. Using it here made `elapsed`
+      // inside update() equal to "time since engine boot" instead of "time
+      // since this play() call" — harmless if a cutscene is triggered right
+      // after boot, but any cutscene triggered later than its own duration
+      // into a real session (e.g. firstBlood/bossVictory, both triggered
+      // well after boot) would read as already-finished on its very first
+      // frame. `engine.ctx` is a live getter — read it fresh, here, instead.
+      state.startTime = engine.ctx.time;
       state.script = script;
       state.playResolve = resolve;
       state.skipRequested = false;

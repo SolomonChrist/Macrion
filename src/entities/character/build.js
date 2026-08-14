@@ -290,8 +290,8 @@ function fromThree(geo, matrix) {
 // the single source of truth: the skull loft, every face feature and the hair
 // cap are all evaluated from it, so nothing can end up buried inside anything.
 
-const Y_CHIN = 1.5430;
-const Y_TOP = 1.7860;
+const Y_CHIN = 1.5555;
+const Y_TOP = 1.7885;
 const Y_EYE = 1.6420;
 
 // y, halfWidth, halfDepth, zCentre, frontFlatten, frontNarrow
@@ -302,23 +302,26 @@ const Y_EYE = 1.6420;
 // head from a realistic one. frontNarrow pinches the front of the lower rings
 // so the chin comes to a point instead of a spade.
 const HEAD_PROF = [
-  [1.5430, 0.0135, 0.0230, 0.0330, 1.00, 0.00],
-  [1.5490, 0.0250, 0.0330, 0.0270, 1.00, 0.00],
-  [1.5570, 0.0380, 0.0430, 0.0200, 0.96, 0.05],
-  [1.5670, 0.0490, 0.0520, 0.0140, 0.92, 0.08],
-  [1.5790, 0.0570, 0.0600, 0.0090, 0.88, 0.10],
-  [1.5930, 0.0632, 0.0665, 0.0045, 0.85, 0.10],
+  // The lower face was 11 mm too long in the first pass — an anime head puts the
+  // eye line near the vertical middle of the skull and keeps everything under it
+  // short. The chin came up to 1.5555 and the crown out to 1.7885.
+  [1.5555, 0.0150, 0.0245, 0.0322, 1.00, 0.00],
+  [1.5615, 0.0272, 0.0348, 0.0262, 1.00, 0.00],
+  [1.5690, 0.0398, 0.0442, 0.0196, 0.96, 0.05],
+  [1.5775, 0.0500, 0.0528, 0.0140, 0.92, 0.08],
+  [1.5865, 0.0578, 0.0606, 0.0092, 0.88, 0.10],
+  [1.5960, 0.0636, 0.0668, 0.0046, 0.85, 0.10],
   [1.6080, 0.0678, 0.0715, 0.0010, 0.83, 0.09],
   [1.6250, 0.0716, 0.0752, -0.0015, 0.81, 0.07],
   [1.6420, 0.0745, 0.0778, -0.0035, 0.80, 0.05],
   [1.6600, 0.0768, 0.0797, -0.0055, 0.81, 0.03],
-  [1.6800, 0.0784, 0.0812, -0.0080, 0.85, 0.00],
-  [1.7000, 0.0786, 0.0818, -0.0100, 0.90, 0.00],
-  [1.7220, 0.0760, 0.0796, -0.0118, 0.95, 0.00],
-  [1.7440, 0.0692, 0.0730, -0.0132, 1.00, 0.00],
-  [1.7640, 0.0560, 0.0600, -0.0140, 1.00, 0.00],
-  [1.7780, 0.0355, 0.0390, -0.0145, 1.00, 0.00],
-  [1.7860, 0.0110, 0.0125, -0.0148, 1.00, 0.00],
+  [1.6800, 0.0800, 0.0828, -0.0080, 0.85, 0.00],
+  [1.7010, 0.0806, 0.0838, -0.0100, 0.90, 0.00],
+  [1.7240, 0.0782, 0.0816, -0.0118, 0.95, 0.00],
+  [1.7460, 0.0712, 0.0750, -0.0132, 1.00, 0.00],
+  [1.7660, 0.0578, 0.0616, -0.0140, 1.00, 0.00],
+  [1.7800, 0.0368, 0.0402, -0.0145, 1.00, 0.00],
+  [1.7885, 0.0114, 0.0128, -0.0148, 1.00, 0.00],
 ];
 
 function headSec(y) {
@@ -436,10 +439,10 @@ function ellipseOutline(cx, cy, rx, ry, n) {
 // makes the read work), a bright sclera lens, a large iris with a limbal ring
 // and a vertical value gradient, a pupil, two specular dots, and a thin lower
 // lid. All of it is exact triangles, so it stays crisp at any distance.
-const EYE_U = 0.0372;   // centre, distance from the face centreline
-const EYE_W = 0.0180;   // half width
-const EYE_HU = 0.0130;  // upper lid height
-const EYE_HL = 0.0096;  // lower lid depth
+const EYE_U = 0.0392;   // centre, distance from the face centreline
+const EYE_W = 0.0198;   // half width
+const EYE_HU = 0.0150;  // upper lid height
+const EYE_HL = 0.0108;  // lower lid depth
 const EYE_TILT = 0.20;  // outer corner rise
 
 function eyeOutline(sgn, n) {
@@ -995,7 +998,7 @@ export function buildPieces(field = null, aoSample = null) {
       return [lerp(1.10, 0.56, sh), lerp(1.08, 0.58, sh), lerp(1.06, 0.64, sh)];
     });
     // iris
-    const IR = 0.0104, IC = [s * EYE_U, -0.0012];
+    const IR = 0.0119, IC = [s * EYE_U, -0.0014];
     const ir = faceDome(ellipseOutline(IC[0], IC[1], IR, IR, 22), IC,
       [[1.0, 0.0050], [0.92, 0.0059], [0.72, 0.0065], [0.44, 0.0068], [0.16, 0.0069], [0.05, 0.0069]]);
     pushFlat(ir, MAT.EYE, { head: 1.0 }, 1.0);
@@ -1013,12 +1016,12 @@ export function buildPieces(field = null, aoSample = null) {
       }
     }
     // specular dots
-    const h1 = faceDome(ellipseOutline(s * (EYE_U - 0.0040), 0.0044, 0.0035, 0.0035, 12),
-      [s * (EYE_U - 0.0040), 0.0044], [[1.0, 0.0071], [0.5, 0.0076], [0.08, 0.0077]]);
+    const h1 = faceDome(ellipseOutline(s * (EYE_U - 0.0046), 0.0052, 0.0040, 0.0040, 12),
+      [s * (EYE_U - 0.0046), 0.0052], [[1.0, 0.0071], [0.5, 0.0076], [0.08, 0.0077]]);
     pushFlat(h1, MAT.EYE, { head: 1.0 }, 1.0);
     paint(h1, () => [2.05, 2.10, 2.15]);
-    const h2 = faceDome(ellipseOutline(s * (EYE_U + 0.0052), -0.0062, 0.0018, 0.0018, 10),
-      [s * (EYE_U + 0.0052), -0.0062], [[1.0, 0.0068], [0.5, 0.0071], [0.08, 0.0072]]);
+    const h2 = faceDome(ellipseOutline(s * (EYE_U + 0.0060), -0.0072, 0.0021, 0.0021, 10),
+      [s * (EYE_U + 0.0060), -0.0072], [[1.0, 0.0068], [0.5, 0.0071], [0.08, 0.0072]]);
     pushFlat(h2, MAT.EYE, { head: 1.0 }, 1.0);
     paint(h2, () => [1.25, 1.32, 1.40]);
     // upper lash line — thickens and flicks up toward the temple
@@ -1056,7 +1059,7 @@ export function buildPieces(field = null, aoSample = null) {
       const N = 16, samples = [];
       for (let i = 0; i <= N; i++) {
         const q = i / N;
-        const a = lerp(-0.0205, 0.0212, q);
+        const a = lerp(-0.0224, 0.0236, q);
         const base = 0.0196 + 0.0082 * Math.sin(Math.PI * q) + 0.0030 * q;
         const th = (0.0054 - 0.0034 * q) * Math.pow(Math.sin(Math.PI * q), 0.18);
         samples.push({ u: s * (EYE_U + a), b0: base - th * 0.5, b1: base + th * 0.5, o0: 0.0012, o1: 0.0043 });
@@ -1097,11 +1100,15 @@ export function buildPieces(field = null, aoSample = null) {
   // is a silhouette element rather than a detail. buildSwordGeometry() below
   // returns the same weapon drawn, at the origin, for the combat rig.
   {
-    const S0 = [-0.168, 1.082, -0.022];
-    const S1 = [-0.222, 0.570, -0.196];
+    const S0 = [-0.176, 1.086, -0.020];
+    const S1 = [-0.236, 0.512, -0.208];
     const ax = norm3([S1[0] - S0[0], S1[1] - S0[1], S1[2] - S0[2]]);
-    const e2 = [1, 0, 0];                       // scabbard thickness axis
-    const e1 = norm3(cross3(ax, e2));           // width axis, in the flat plane
+    // The scabbard is rolled so its FLAT faces the camera and the crossguard lies
+    // across the body. Anatomically a hip sword sits the other way round, but a
+    // guard pointing at the lens foreshortens to nothing and the whole weapon
+    // stops reading — the first pass lost the sword to exactly that.
+    const e1 = norm3(cross3(ax, [0, 0, 1]));    // guard / width axis, lateral
+    const e2 = norm3(cross3(e1, ax));           // thickness axis
     const mask = { hips: 1.0, spine: 0.35, thighR: 0.22 };
     const at = (t, w, h, ang) => {
       const p = [S0[0] + (S1[0] - S0[0]) * t, S0[1] + (S1[1] - S0[1]) * t, S0[2] + (S1[2] - S0[2]) * t];
@@ -1122,17 +1129,17 @@ export function buildPieces(field = null, aoSample = null) {
       }
       return orient(loft(secs, { closedU: true }));
     };
-    pushFlat(tube(0.00, 0.965, [0.0300, 0.0180], [0.0140, 0.0082], 8), MAT.LEATHER, mask, 0.80);
-    pushFlat(tube(0.965, 1.0, [0.0180, 0.0030], [0.0082, 0.0016], 3), MAT.METAL, mask, 0.86);
-    pushFlat(tube(0.005, 0.055, [0.0322, 0.0318], [0.0158, 0.0154], 3), MAT.METAL, mask, 0.86);
-    pushFlat(tube(0.455, 0.505, [0.0262, 0.0258], [0.0125, 0.0122], 3), MAT.METAL, mask, 0.86);
+    pushFlat(tube(0.00, 0.955, [0.0360, 0.0212], [0.0150, 0.0090], 8), MAT.LEATHER, mask, 0.80);
+    pushFlat(tube(0.955, 1.0, [0.0212, 0.0034], [0.0090, 0.0018], 3), MAT.METAL, mask, 0.90);
+    pushFlat(tube(0.005, 0.060, [0.0386, 0.0380], [0.0170, 0.0166], 3), MAT.METAL, mask, 0.90);
+    pushFlat(tube(0.450, 0.500, [0.0306, 0.0300], [0.0134, 0.0130], 3), MAT.METAL, mask, 0.90);
     // guard, grip, pommel
     const up = [-ax[0], -ax[1], -ax[2]];
     const G = [S0[0] + up[0] * 0.014, S0[1] + up[1] * 0.014, S0[2] + up[2] * 0.014];
     {
       const secs = [];
-      for (const [d, w, h] of [[-0.064, 0.0060, 0.0090], [-0.030, 0.0105, 0.0150],
-        [0.014, 0.0105, 0.0150], [0.052, 0.0060, 0.0090]]) {
+      for (const [d, w, h] of [[-0.074, 0.0058, 0.0094], [-0.034, 0.0112, 0.0162],
+        [0.018, 0.0112, 0.0162], [0.060, 0.0058, 0.0094]]) {
         const c = [G[0] + e1[0] * d, G[1] + e1[1] * d, G[2] + e1[2] * d];
         const sec = [];
         for (let u = 0; u < 8; u++) {
@@ -1170,20 +1177,19 @@ export function buildPieces(field = null, aoSample = null) {
   // Act 0's mechanic, so it is worn where it is legible: laid on the chest
   // across the harness diagonal, riding the torso surface.
   {
-    const N = 26, NU = 8, R = 0.0106;
+    // First pass put it flat on the chest and the tunic simply ate it — the
+    // torso SDF blends outward well past torsoR(). Tucked THROUGH the front of
+    // the belt instead: the belt is the outermost thing on the waist, so
+    // anything in front of it is guaranteed to read.
+    const N = 26, NU = 8, R = 0.0108;
+    const FA = [-0.112, 1.088, 0.104], FC = [0.010, 1.074, 0.156], FB = [0.128, 1.056, 0.098];
     const pathP = [], pathE1 = [], pathE2 = [];
-    for (let i = 0; i < N; i++) {
-      const q = i / (N - 1);
-      const th = lerp(-0.42 * Math.PI, -0.10 * Math.PI, q);
-      const y = lerp(1.152, 1.362, q);
-      const [rx, rz] = torsoR(y);
-      pathP.push([(rx + 0.013) * Math.sin(th), y, (rz + 0.017) * Math.cos(th)]);
-    }
+    for (let i = 0; i < N; i++) pathP.push(bez(FA, FC, FB, i / (N - 1)));
     for (let i = 0; i < N; i++) {
       const a = pathP[Math.max(0, i - 1)], b = pathP[Math.min(N - 1, i + 1)];
       const t = norm3([b[0] - a[0], b[1] - a[1], b[2] - a[2]]);
-      const outw = norm3([pathP[i][0], 0, pathP[i][2]]);
-      pathE1.push(outw);
+      const outw = norm3(cross3(t, [0, 1, 0]));   // horizontal, across the tube
+      pathE1.push(outw);                          // faces the camera: the holes go here
       pathE2.push(norm3(cross3(outw, t)));
     }
     const holes = [0.28, 0.37, 0.46, 0.60, 0.69, 0.78];
@@ -1203,7 +1209,7 @@ export function buildPieces(field = null, aoSample = null) {
       secs.push(sec);
     }
     const g = orient(loft(secs, { closedU: true }));
-    const fmask = { chest: 1.0, spine: 0.45 };
+    const fmask = { hips: 1.0, spine: 0.55 };
     pushFlat(g, MAT.SASH, fmask, 0.86);
     paint(g, (x, y, z, v) => (dark[v] ? [0.10, 0.075, 0.055] : [0.92, 0.78, 0.58]));
     for (const [t0, t1] of [[0.02, 0.10], [0.90, 0.98]]) {
