@@ -110,28 +110,35 @@ vec3 mBump( vec3 N, vec3 wp, float h, float scale ) {
  */
 float mHeight( int m, vec3 p, float det ) {
   if ( m == 0 ) {                                     // skin: pores + folds
-    return mNoise( p * 150.0 ) * 0.30 * det + mFbm( p * 42.0, 3 ) * 0.55 + mFbm( p * 11.0, 2 ) * 0.5;
+    return mNoise( p * 200.0 ) * 0.22 * det + mFbm( p * 46.0, 2 ) * 0.32 + mFbm( p * 11.0, 2 ) * 0.35;
   } else if ( m == 1 || m == 5 || m == 8 || m == 9 ) { // woven cloth
-    float weave = ( sin( p.x * 205.0 ) * sin( p.y * 205.0 ) * 0.28
-                  + sin( ( p.y + p.z ) * 172.0 ) * 0.16 ) * det;
-    float quilt = smoothstep( 0.42, 0.5, abs( fract( p.x * 8.5 + p.z * 2.0 ) - 0.5 ) ) * 0.5;
-    return weave + mFbm( p * 62.0, 3 ) * 0.55 + quilt;
+    // sin*sin puts a checker lattice at pi/f metres; at f = 205 that was a 15 mm
+    // cell, which at full bump amplitude read as knitted chainmail. Finer and
+    // much shallower — the roughness break-up is what sells cloth, not relief.
+    float weave = ( sin( p.x * 330.0 ) * sin( p.y * 330.0 ) * 0.11
+                  + sin( ( p.y + p.z ) * 268.0 ) * 0.07 ) * det;
+    float quilt = smoothstep( 0.42, 0.5, abs( fract( p.x * 8.5 + p.z * 2.0 ) - 0.5 ) ) * 0.32;
+    return weave + mFbm( p * 58.0, 2 ) * 0.30 + quilt;
   } else if ( m == 2 || m == 7 ) {                    // leather grain + creases
-    float grain = ( 1.0 - mCell( p * 88.0 ) ) * det;
-    float crease = smoothstep( 0.35, 0.0, mCell( p * 24.0 ) );
-    return grain * 0.85 + crease * 0.8 + mFbm( p * 46.0, 2 ) * 0.25;
+    float grain = ( 1.0 - mCell( p * 120.0 ) ) * det;
+    float crease = smoothstep( 0.30, 0.0, mCell( p * 24.0 ) );
+    return grain * 0.40 + crease * 0.55 + mFbm( p * 46.0, 2 ) * 0.18;
   } else if ( m == 4 ) {                              // hair: stretched strands
-    return mFbm( vec3( p.x * 165.0, p.y * 46.0, p.z * 56.0 ), 3 ) * 1.3;
+    return mFbm( vec3( p.x * 210.0, p.y * 52.0, p.z * 62.0 ), 3 ) * 0.85;
   } else if ( m == 3 ) {                              // metal: fine scratches
-    return mFbm( vec3( p.x * 230.0, p.y * 44.0, p.z * 230.0 ), 2 ) * 0.5 * det
-         + mFbm( p * 30.0, 2 ) * 0.4;
+    return mFbm( vec3( p.x * 260.0, p.y * 46.0, p.z * 260.0 ), 2 ) * 0.35 * det
+         + mFbm( p * 30.0, 2 ) * 0.25;
   }
   return 0.0;
 }
 
 void mParams( int m, out vec3 alb, out float rough, out float metal, out float trans ) {
   trans = 0.0;
-  if ( m == 0 ) {        alb = vec3( 0.348, 0.176, 0.114 ); rough = 0.44; metal = 0.0; trans = 0.55; }
+  // NOTE trans (back-scatter) on skin was 0.55, which is fine on a thin ear but
+  // blows out to orange inside any concavity whose walls face away from the key
+  // light — nostrils, the mouth crease, under the jaw. 0.30 still lights the
+  // ear and the jaw edge without setting the creases on fire.
+  if ( m == 0 ) {        alb = vec3( 0.348, 0.176, 0.114 ); rough = 0.44; metal = 0.0; trans = 0.30; }
   else if ( m == 1 ) {   alb = vec3( 0.0400, 0.0455, 0.0362 ); rough = 0.88; metal = 0.0; trans = 0.16; }
   else if ( m == 2 ) {   alb = vec3( 0.0345, 0.0192, 0.0122 ); rough = 0.44; metal = 0.03; }
   else if ( m == 3 ) {   alb = vec3( 0.560, 0.396, 0.152 ); rough = 0.30; metal = 1.0; }
@@ -201,7 +208,7 @@ float macFW; float macDet;`)
 
     // large-scale value break-up so nothing reads as one flat swatch
     float blotch = mFbm( vBindPos * 11.0, 3 );
-    c *= 0.86 + 0.30 * blotch;
+    c *= 0.94 + 0.13 * blotch;
 
     if ( macM == 0 ) {
       // skin: warm the high points, cool and desaturate the recessed skin
@@ -220,11 +227,13 @@ float macFW; float macDet;`)
   {
     float h = mHeight( macM, vBindPos, macDet );
     float r = macRough;
-    if ( macM == 2 || macM == 7 ) r += ( h - 0.9 ) * 0.20;            // leather highs polish
-    else if ( macM == 1 || macM == 5 || macM == 8 || macM == 9 ) r += ( h - 0.75 ) * 0.11;
-    else if ( macM == 0 ) r += ( h - 0.75 ) * 0.16;
-    else if ( macM == 4 ) r += ( h - 0.65 ) * 0.22;
-    else if ( macM == 3 ) r += ( h - 0.45 ) * 0.30;
+    // pivots re-centred on the new mean of each height field, so the band-limit
+    // change does not silently shift every material's base roughness
+    if ( macM == 2 || macM == 7 ) r += ( h - 0.40 ) * 0.24;           // leather highs polish
+    else if ( macM == 1 || macM == 5 || macM == 8 || macM == 9 ) r += ( h - 0.30 ) * 0.16;
+    else if ( macM == 0 ) r += ( h - 0.45 ) * 0.20;
+    else if ( macM == 4 ) r += ( h - 0.42 ) * 0.26;
+    else if ( macM == 3 ) r += ( h - 0.30 ) * 0.34;
     r += ( 1.0 - vBakedAO ) * 0.10;                                    // crevices stay matte
     roughnessFactor = clamp( mix( r, r * 0.42 + 0.03, uWet * 0.9 ), 0.035, 1.0 );
   }`)
@@ -236,12 +245,15 @@ float macFW; float macDet;`)
   {
     vec3 wp = vBindPos;
     float h = mHeight( macM, wp, macDet );
+    // Amplitudes are in the same units as the height field above. Once the
+    // frequencies came down to a resolvable band the old amplitudes turned
+    // fabric into armour plate — relief has to scale WITH wavelength.
     float amp =
-      ( macM == 2 || macM == 7 ) ? 0.040 :
-      ( macM == 1 || macM == 5 || macM == 8 || macM == 9 ) ? 0.030 :
-      ( macM == 0 ) ? 0.012 :
-      ( macM == 4 ) ? 0.050 :
-      ( macM == 3 ) ? 0.010 : 0.0;
+      ( macM == 2 || macM == 7 ) ? 0.0110 :
+      ( macM == 1 || macM == 5 || macM == 8 || macM == 9 ) ? 0.0075 :
+      ( macM == 0 ) ? 0.0030 :
+      ( macM == 4 ) ? 0.0180 :
+      ( macM == 3 ) ? 0.0040 : 0.0;
     amp *= macDet;   // no bump at all once the detail is smaller than a pixel
     if ( amp > 0.0 ) normal = mBump( normal, - vViewPosition, h, amp * ( 1.0 - uWet * 0.6 ) );
   }`)
@@ -259,7 +271,7 @@ float macFW; float macDet;`)
               : ( macM == 4 ) ? vec3( 1.0, 0.66, 0.42 )
               : vec3( 1.0, 0.80, 0.66 );
     reflectedLight.directDiffuse += directionalLights[ 0 ].color * diffuseColor.rgb * tint
-      * macTrans * ( pow( back, 2.0 ) * ( 0.28 + 1.15 * fres ) + wrapD * fres * 0.30 );
+      * macTrans * ( pow( back, 2.6 ) * ( 0.24 + 0.70 * fres ) + wrapD * fres * 0.26 );
   }
 #endif`)
 

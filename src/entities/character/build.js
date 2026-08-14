@@ -174,20 +174,34 @@ export function buildField() {
     F.capsule([s * 0.028, 1.542, 0.024], [s * 0.050, 1.436, 0.010], 0.011, 0.013,
       { mat: MAT.SKIN, k: 0.026, part: H, bones: { neck: 1.0, head: 0.5, chest: 0.2 } });
   }
-  // cranium and facial masses
+  // Cranium and facial masses.
+  //
+  // DEPTH BUDGET — this is the thing the previous build got wrong and it is why
+  // the face read as a featureless egg. The two mid-face masses were centred at
+  // z = +0.030 with z-radii of 0.082 / 0.080, so their front surface sat at
+  // z ~= 0.111. Every feature authored on top of them lives further back than
+  // that: the eyelids front at 0.079, the eye aperture reaches only 0.087, the
+  // brow ridge 0.072. All of them were therefore swallowed 20-30 mm INSIDE the
+  // cheek mass and never reached the zero level set at all — no eyes, no brow,
+  // no nose. Meanwhile the lips, at 0.098, were the only thing that cleared the
+  // mass, so they protruded ~23 mm as a beak.
+  //
+  // The masses below are pulled back to put the face plane at:
+  //     z ~= 0.072 at eye level, 0.074 at the cheek, 0.064 at the jaw
+  // which leaves every feature its correct positive projection.
   F.ellipsoid([0, 1.672, -0.006], [0.0790, 0.0985, 0.0965], { mat: MAT.SKIN, k: 0.030, part: H });
-  F.ellipsoid([0, 1.648, 0.030], [0.0735, 0.0525, 0.0820], { mat: MAT.SKIN, k: 0.028, part: H });
-  F.ellipsoid([0, 1.606, 0.030], [0.0672, 0.0430, 0.0800], { mat: MAT.SKIN, k: 0.026, part: H });
-  F.ellipsoid([0, 1.572, 0.014], [0.0590, 0.0400, 0.0715], { mat: MAT.SKIN, k: 0.026, part: H });
-  F.ellipsoid([0, 1.556, 0.058], [0.0265, 0.0215, 0.0250], { mat: MAT.SKIN, k: 0.020, part: H });
+  F.ellipsoid([0, 1.648, 0.010], [0.0735, 0.0525, 0.0700], { mat: MAT.SKIN, k: 0.028, part: H });
+  F.ellipsoid([0, 1.606, 0.006], [0.0672, 0.0430, 0.0680], { mat: MAT.SKIN, k: 0.026, part: H });
+  F.ellipsoid([0, 1.572, 0.000], [0.0590, 0.0400, 0.0640], { mat: MAT.SKIN, k: 0.026, part: H });
+  F.ellipsoid([0, 1.5580, 0.040], [0.0285, 0.0235, 0.0290], { mat: MAT.SKIN, k: 0.020, part: H });
   for (const s of [1, -1]) {
     F.ellipsoid([s * 0.0605, 1.596, -0.004], [0.0175, 0.0400, 0.0380], { mat: MAT.SKIN, k: 0.024, part: H });
-    F.ellipsoid([s * 0.0520, 1.632, 0.052], [0.0250, 0.0210, 0.0270], { mat: MAT.SKIN, k: 0.018, part: H });
+    F.ellipsoid([s * 0.0520, 1.632, 0.036], [0.0250, 0.0210, 0.0250], { mat: MAT.SKIN, k: 0.018, part: H });
   }
-  // brow ridge + glabella
-  F.capsule([-0.0525, 1.6685, 0.0605], [0.0525, 1.6685, 0.0605], 0.0140, 0.0140,
+  // brow ridge + glabella — pushed out to clear the (now correct) face plane
+  F.capsule([-0.0525, 1.6685, 0.0670], [0.0525, 1.6685, 0.0670], 0.0140, 0.0140,
     { scale: [1, 0.62, 0.80], mat: MAT.SKIN, k: 0.012, part: H });
-  F.ellipsoid([0, 1.6660, 0.0680], [0.0135, 0.0125, 0.0120], { mat: MAT.SKIN, k: 0.010, part: H });
+  F.ellipsoid([0, 1.6660, 0.0700], [0.0135, 0.0125, 0.0120], { mat: MAT.SKIN, k: 0.010, part: H });
   // eye sockets, then lids, then the palpebral opening
   for (const s of [1, -1]) {
     F.ellipsoid([s * 0.0335, 1.6520, 0.0605], [0.0235, 0.0180, 0.0195],
@@ -211,22 +225,28 @@ export function buildField() {
     F.ellipsoid([s * 0.0338, 1.6512, 0.0706], [0.0192, 0.0100, 0.0165],
       { op: 'sub', k: 0.005, part: H });
   }
-  // nose
-  F.capsule([0, 1.6720, 0.0625], [0, 1.6215, 0.0905], 0.0095, 0.0135,
+  // nose — the old tip fronted at z 0.1105 against a 0.111 cheek mass, i.e. it
+  // was flush with the face and invisible. Now ~20 mm of projection.
+  F.capsule([0, 1.6720, 0.0690], [0, 1.6215, 0.0790], 0.0095, 0.0135,
     { scale: [0.88, 1, 1], mat: MAT.SKIN, k: 0.010, part: H });
-  F.ellipsoid([0, 1.6135, 0.0960], [0.0138, 0.0125, 0.0145], { mat: MAT.SKIN, k: 0.008, part: H });
+  F.ellipsoid([0, 1.6135, 0.0800], [0.0142, 0.0125, 0.0145], { mat: MAT.SKIN, k: 0.008, part: H });
   for (const s of [1, -1]) {
-    F.ellipsoid([s * 0.0148, 1.6090, 0.0850], [0.0096, 0.0098, 0.0118], { mat: MAT.SKIN, k: 0.007, part: H });
+    F.ellipsoid([s * 0.0150, 1.6090, 0.0700], [0.0100, 0.0100, 0.0118], { mat: MAT.SKIN, k: 0.007, part: H });
   }
-  F.ellipsoid([0, 1.6060, 0.0855], [0.0120, 0.0072, 0.0120], { mat: MAT.SKIN, k: 0.007, part: H });
+  F.ellipsoid([0, 1.6060, 0.0700], [0.0120, 0.0075, 0.0120], { mat: MAT.SKIN, k: 0.007, part: H });
   // mouth — lips pushed apart so the parting groove between them can be two
   // cells wide. The old 2.4 mm groove and 3.8 mm philtrum were both far below
   // the grid and only ever produced speckle.
-  F.ellipsoid([0, 1.5928, 0.0838], [0.0242, 0.0098, 0.0142], { mat: MAT.SKIN, k: 0.006, part: H });
-  F.ellipsoid([0, 1.5716, 0.0828], [0.0214, 0.0112, 0.0140], { mat: MAT.SKIN, k: 0.006, part: H });
-  F.capsule([-0.0186, 1.5824, 0.0852], [0.0186, 1.5824, 0.0852], 0.0060, 0.0060,
+  F.ellipsoid([0, 1.5928, 0.0666], [0.0242, 0.0098, 0.0142], { mat: MAT.SKIN, k: 0.006, part: H });
+  F.ellipsoid([0, 1.5716, 0.0640], [0.0214, 0.0112, 0.0140], { mat: MAT.SKIN, k: 0.006, part: H });
+  // Both mouth grooves are pulled BACK rather than made thinner: a thin cutter
+  // would drop back under the 5.8 mm grid, but sinking a fat one into the lip
+  // mass gives the same shallow crease and stays resolvable. Cutting deep here
+  // also carved a cavity whose walls face away from the key light, which set the
+  // skin back-scatter term glowing orange — the mouth read as a lit gash.
+  F.capsule([-0.0186, 1.5824, 0.0602], [0.0186, 1.5824, 0.0602], 0.0060, 0.0060,
     { scale: [1, 1, 0.70], op: 'sub', k: 0.005, part: H });
-  F.capsule([-0.0148, 1.5610, 0.0768], [0.0148, 1.5610, 0.0768], 0.0060, 0.0060,
+  F.capsule([-0.0148, 1.5606, 0.0540], [0.0148, 1.5606, 0.0540], 0.0060, 0.0060,
     { op: 'sub', k: 0.007, part: H });
   // ears
   for (const s of [1, -1]) {
@@ -237,7 +257,7 @@ export function buildField() {
   // i.e. barely half a cell, so it meshed as scattered hair-coloured chips
   // across the forehead instead of a brow.
   for (const s of [1, -1]) {
-    F.capsule([s * 0.0135, 1.6730, 0.0700], [s * 0.0545, 1.6742, 0.0560], 0.0088, 0.0066,
+    F.capsule([s * 0.0135, 1.6730, 0.0740], [s * 0.0545, 1.6742, 0.0610], 0.0088, 0.0066,
       { scale: [1, 0.85, 0.85], mat: MAT.HAIR, k: 0.006, part: H });
   }
 
