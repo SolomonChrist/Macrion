@@ -601,7 +601,7 @@ export function buildPieces(field = null, aoSample = null) {
     for (let i = 0; i <= NS; i++) {
       const th = (i / NS) * Math.PI * 2;
       const front = Math.max(0, Math.cos(th));
-      const yT = 1.512 - 0.048 * front * front;
+      const yT = 1.5455 - 0.0560 * front * front;
       const rIB = neckR(yB) + 0.007, rOB = rIB + 0.022;
       const rIT = neckR(yT) + 0.004, rOT = rIT + 0.021;
       const prof = [
@@ -971,7 +971,7 @@ export function buildPieces(field = null, aoSample = null) {
 
   // ---- mouth ----
   {
-    const N = 20, MW = 0.0158;
+    const N = 20, MW = 0.0138;
     const samples = [];
     for (let i = 0; i <= N; i++) {
       const q = i / N;
@@ -983,12 +983,12 @@ export function buildPieces(field = null, aoSample = null) {
     }
     const g = faceRibbon(samples);
     pushFlat(g, MAT.SKIN, { head: 1.0 }, 0.62);
-    paint(g, () => [0.26, 0.150, 0.142]);
+    paint(g, () => [0.34, 0.215, 0.198]);
     // lower lip catch-light
     const lip = faceDome(ellipseOutline(0, -0.0740, 0.0128, 0.0034, 16), [0, -0.0740],
       [[1.0, 0.0005], [0.60, 0.0018], [0.10, 0.0022]]);
     pushFlat(lip, MAT.SKIN, { head: 1.0 }, 0.94);
-    paint(lip, () => [1.14, 0.94, 0.92]);
+    paint(lip, () => [1.04, 0.95, 0.94]);
   }
 
   // ---- eyes ----
@@ -1067,8 +1067,8 @@ export function buildPieces(field = null, aoSample = null) {
       for (let i = 0; i <= N; i++) {
         const q = i / N;
         const a = lerp(-0.0224, 0.0236, q);
-        const base = 0.0196 + 0.0082 * Math.sin(Math.PI * q) + 0.0030 * q;
-        const th = (0.0054 - 0.0034 * q) * Math.pow(Math.sin(Math.PI * q), 0.18);
+        const base = 0.0178 + 0.0052 * Math.sin(Math.PI * q) + 0.0034 * q;
+        const th = (0.0070 - 0.0046 * q) * Math.pow(Math.sin(Math.PI * q), 0.16);
         samples.push({ u: s * (EYE_U + a), b0: base - th * 0.5, b1: base + th * 0.5, o0: 0.0012, o1: 0.0043 });
       }
       const g = faceRibbon(samples);
@@ -1107,8 +1107,8 @@ export function buildPieces(field = null, aoSample = null) {
   // is a silhouette element rather than a detail. buildSwordGeometry() below
   // returns the same weapon drawn, at the origin, for the combat rig.
   {
-    const S0 = [-0.176, 1.086, -0.020];
-    const S1 = [-0.236, 0.512, -0.208];
+    const S0 = [-0.186, 1.088, 0.012];
+    const S1 = [-0.256, 0.496, -0.092];
     const ax = norm3([S1[0] - S0[0], S1[1] - S0[1], S1[2] - S0[2]]);
     // The scabbard is rolled so its FLAT faces the camera and the crossguard lies
     // across the body. Anatomically a hip sword sits the other way round, but a
