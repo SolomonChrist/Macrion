@@ -1,123 +1,121 @@
 # MACRION: FIRST LIGHT — the shippable showcase
 
-**Directive:** the next 5-hour run must complete something that can be shown to people and
-shipped. Polish comes later; *something finished* comes now.
+**Directive (user, superseding the earlier draft of this file):**
 
-This document defines exactly what "finished" means. Everything in MUST ships or the round
-failed. Everything in COULD is cut without hesitation the moment the clock is at risk.
+> *"The visuals for Oz and movement need to be done, it should look stellar and match the
+> requested spec of Anime. It should all look AAA. Use whatever agents you need to get this
+> done and focus on it as well as the gameplay. We need to be able to clear at least a first
+> set of battles and a boss battle and cut scenes. That should be a bare minimum and it should
+> all look incredible."*
 
----
-
-## The strategy — lead with strength, hide the long pole
-
-Honest assessment of the build as of this round:
-
-| Area | State | Showable? |
-|---|---|---|
-| Terrain, sky, atmosphere, weather, day/night | **Excellent** | Yes — this is the headline |
-| Audio: adaptive score, Sarah's motif, ambience | **Written, unverified** | Yes, once verified |
-| HUD, cutscene system | **Verified working** | Yes |
-| Quest data, Act 0 / 0.5 flow | **Verified running** | Yes |
-| Oz — body, clothing, materials | **Good** | Yes at gameplay distance |
-| Oz — face, hair, props | **Weak** — face reads wrong, hair is a cap, no sword or flute | **No, not in close-up** |
-| Combat, enemies, bosses | **Does not exist** | No |
-
-**The decision that follows from this:** the showcase is built around the world and the
-atmosphere, with Oz shown at **gameplay and silhouette distance where he already reads well**,
-and *not* framed in portrait close-up. A broken face at 30° FOV would undo the credibility the
-environment earns.
-
-That is not hiding a flaw — it is shot selection, which is what every game trailer does.
+An earlier version of this document proposed deferring Oz's face and barring combat to
+guarantee something shipped. **That is overruled.** Oz's anime look and a complete first
+combat arc are now the minimum bar, not stretch goals. Spend agents freely.
 
 ---
 
-## MUST — the round fails without these
+## What "done" means this round
 
-### 1. Fix the movement blocker
+A person can start the game and play an unbroken arc:
+
+**Title screen → intro cutscene → explore → learn to fight → clear a set of enemy encounters
+→ cutscene → boss battle → victory cutscene → level up + new power → end card.**
+
+And at every moment of it, **it looks AAA**.
+
+---
+
+## MUST — all of these, or the round failed
+
+### 1. Movement — fix the blocker, then make it feel good
 `character.js`'s `animator.apply(time)` resets every bone absolutely from rest pose each frame,
-wiping the position writes from `controller.js`, which runs after it in module order. **The
-player currently cannot move.** Nothing else in this document matters until this is fixed.
+wiping position writes from `controller.js`, which runs after it in module order. **The player
+currently cannot move.** Everything else is downstream of this.
 
-The fix is an ownership decision: the animator owns *bone-local* pose; the controller owns the
-character **root/group** transform. They must not both write translation to the same node.
+Fix by ownership: the animator owns **bone-local pose**; the controller owns the character
+**root transform**. They must never both write translation to the same node.
 
-### 2. A playable free-roam build
-- Oz walks, runs and turns with a third-person camera that never clips terrain
-- Full day/night (`,` `.`) and weather (`T`) control while playing
-- HUD visible, audio playing
-- Runs at 60+ fps
+Then make it feel AAA: acceleration and deceleration curves, a turn rate that reads as weight,
+sprint, a third-person camera on a spring boom that never clips terrain, and locomotion
+animation that matches actual ground speed so the feet do not slide. Foot-slide is the single
+most common tell of amateur character movement.
 
-This is the thing a person can be handed. It is the product.
+### 2. Oz — stellar, anime, AAA
+This is the headline asset and it is currently the weakest thing in the build.
 
-### 3. A cinematic showcase reel — `MACRION.systems.cutscene.play('showcase')`
-A real-time, in-engine sequence of roughly 90 seconds, triggerable from the title screen and
-from a key. It must:
-- Sweep the basin across **dawn → golden hour → storm → night**, using the weather and
-  time-of-day system, since that range is the engine's single most impressive capability
-- Use spline camera moves with ease in/out — never straight lerps
-- Carry **Sarah's motif** under it, and the adaptive score
-- Show Oz **in silhouette and at distance**, never in portrait close-up
-- End on the **end card**: `https://www.solomonchrist.com`, an invitation to the AI + Automation
-  mailing list, and the statement that the entire game was made using Claude and AI
+- **Face:** stylized anime, not attempted-realistic. Large expressive eyes with clean lid
+  lines, defined brows, a simple confident nose and mouth. Clean shapes beat detail here —
+  anime faces are about precise, minimal forms, and a muddy realistic face is worse than a
+  crisp stylized one at every distance.
+- **Hair:** bold sculpted shōnen silhouette with strong directional flow and dramatic spiked
+  volume. It must read as a distinctive shape in the `backlit` shot. The current moulded cap
+  fails this outright.
+- **Sword and flute**, both visible on his person. Both are plot-critical; the flute is the
+  Act 0 mechanic and is currently absent.
+- **Materials:** real roughness contrast between skin, cloth, leather and metal. He must sit in
+  the world with correct rim light and contact shadow.
 
-### 4. A title screen
-Simple, restrained: the title, "Press any key", and the credit line. It makes the build feel
-like a product rather than a demo, and it costs almost nothing.
+**Original silhouette, genre-accurate style.** Build to the shōnen convention; never replicate
+a specific existing character. The repo publicly states it contains no copyrighted material.
 
-### 5. Ship packaging
-- `README.md` updated with a one-command start and a screenshot
-- Everything committed and pushed to GitHub
-- The progress page updated with the showcase captures and the live launch link
+Prior diagnosis is in `heartbeats/oz-repair.md` — three bugs already found and fixed (surface
+nets winding, material aliasing past Nyquist, mid-face masses burying every feature). Do not
+re-investigate what it ruled out.
 
----
+### 3. Enemies — the Snagulas
+Man-sized, **green**, **sharp teeth**, **red eyes**, per `docs/STORY.md`. At least **three
+distinct types** sharing one generator so they read as a family. They must look genuinely
+threatening and genuinely finished — an unconvincing enemy undoes the world's credibility
+faster than anything else. Reuse the character rig; do not duplicate it.
 
-## SHOULD — do these if the MUSTs are secure
+### 4. Combat that feels good
+- Sword melee with real hit detection, a combo or two, and **hit feedback that lands**:
+  impact pause, camera shake, a flash, a sound, knockback
+- Enemy AI: idle → notice → approach → attack → stagger → death
+- Player health, damage, and death/respawn
+- Emits events on the game bus so audio and HUD react
 
-### 6. Oz's silhouette pass
-Not the face. The **silhouette**, because that is what the showcase actually shows:
-- Anime-styled sculpted hair that reads as a shape in `backlit` — the current moulded cap does not
-- **A sword and a flute on his person.** Both are plot-critical and both are currently absent.
-  The flute in particular is the Act 0 mechanic.
+Responsiveness is the whole game here. Input latency is what players feel first.
 
-### 7. Act 0 playable
-The flute beat, already authored as verified quest data: find it, carry it, play it at the
-song-spot, the Great Head appears. This is the game's first "learn by doing" moment and it is
-mostly wiring rather than new systems.
+### 5. A first set of encounters, then a boss
+- Several Snagula encounters that teach the mechanic by using it
+- **A boss** — distinct from the Snagulas, with a readable attack pattern the player learns,
+  and a real difficulty curve between frustration and boredom per `docs/GAME_DESIGN.md`
+- On victory: **level up and a new power**, and per the design rule that power must be
+  *exactly what is needed* for what comes next — a key for a specific lock, not a stat bump
 
----
+### 6. Cutscenes
+- **Intro** — establishing the basin, golden hour, spline camera, letterboxed
+- **Post-battle reward** — after the first encounter set
+- **Boss victory** — the big one. Per `GAME_DESIGN.md` the reward order is: win → cutscene →
+  level up → new power → the breathtaking view ahead with the next paths visible in it
+- **End card** — `https://www.solomonchrist.com`, the AI + Automation mailing list invitation,
+  and the statement that the entire game was made using Claude and AI
 
-## COULD — cut without hesitation
+Music must follow the state machine: `explore → alert` on entering an enemy area, `→ boss` on
+entering the boss arena, `→ resolve` on victory.
 
-- The Great Head as impressive geometry (a simple version is fine for the showcase)
-- Sarah's apparition in-world
-- Snagulas, combat, the first boss
-- Oz's face repair
-
-**Do not start combat this round.** Half-finished combat is worse than none — it invites the
-viewer to judge the game on its weakest axis. Better to ship a beautiful world you can walk
-through than a broken fight.
-
----
-
-## The gate — how we know it shipped
-
-A person who has never seen this project can:
-1. Clone the repo, run two commands, and be in the game
-2. Press a key and watch a 90-second reel that ends on the end card
-3. Press another key and walk around the world themselves
-4. Change the time of day and the weather while walking
-5. Hear music that responds to what they are doing
-
-If all five are true, the round succeeded. If Oz's face is still imperfect and there are no
-enemies, **the round still succeeded** — those are the next round's job.
+### 7. Ship packaging
+README with a one-command start, everything committed and pushed, progress page updated with
+showcase captures and the live launch link.
 
 ---
 
-## Standing constraints, unchanged
+## Non-negotiables
 
 - Three.js only. Everything procedural. No asset packs, no downloaded textures, no sample audio.
-- No copyrighted material ships — the repo publicly claims this and it must stay true.
-- Determinism: captures bit-identical between runs.
-- Perf: 60 fps floor at 1080p, ≤400 draw calls.
+- No copyrighted material ships.
+- 60 fps floor at 1080p, ≤400 draw calls.
+- Captures bit-identical between runs.
 - Every agent writes a heartbeat per `docs/HEARTBEAT.md`, with a hard tool-call budget and an
   instruction to report before exhausting it.
+
+## If the clock runs out
+
+Cut in this order, last first:
+1. Extra Snagula types beyond the first
+2. The post-battle reward cutscene (keep intro, boss victory, end card)
+3. Combo attacks beyond a single swing
+
+**Never cut:** movement, Oz's look, one enemy type, one boss, the boss victory cutscene, the
+end card. Those are the arc.
