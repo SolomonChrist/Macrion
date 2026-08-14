@@ -39,7 +39,8 @@ const damp = (from, to, k, dt) => lerp(from, to, 1 - Math.exp(-k * dt));
 const RUN_SPEED = 5.6;
 const SPRINT_SPEED = 8.2;
 const POSE_IDLE_MAX = 0.35;  // below this: idle
-const POSE_WALK_MAX = 3.2;   // below this: walk: above: run
+const POSE_WALK_MAX = 3.2;   // below this: walk; above: run
+const IDLE_HOLD_FRAMES = 8;  // frames of genuine stillness before dropping to idle   // below this: walk: above: run
 const ACCEL = 22;          // m/s^2 toward target speed
 const DECEL = 26;          // m/s^2 toward zero when no input
 const TURN_RATE = 11;      // smoothing rate for facing yaw
@@ -147,6 +148,7 @@ export function createController(ctx) {
   const velocity = new THREE.Vector3(); // horizontal velocity, world space
   let vy = 0;                            // vertical velocity
   let grounded = true;
+  let stillFrames = 0;
   let facing = 0;                        // character yaw, radians (smoothed)
   let facingInit = false;
   let pose = 'idle';
@@ -259,9 +261,30 @@ export function createController(ctx) {
         const nx = node.position.x + stepX;
         const nz = node.position.z + stepZ;
         if (slopeAt(nx, nz) > maxSlopeRad) {
-          // Too steep — cancel the step (and its velocity) rather than let the
-          // character climb a cliff or jitter against it.
-          velocity.x = 0; velocity.z = 0; stepX = 0; stepZ = 0;
+          // Too steep to climb. Do NOT zero the velocity outright — that dead-
+          // stops the character the instant it touches any steep ground and,
+          // because the input is still held, re-triggers every frame. The gait
+          // then falls to idle and locomotion silently stops existing.
+          // Instead, remove only the component heading INTO the slope and keep
+          // the tangential part, so the character slides along the wall.
+          const e = 0.6;
+          const gx = terrainHeight(nx + e, nz) - terrainHeight(nx - e, nz);
+          const gz = terrainHeight(nx, nz + e) - terrainHeight(nx, nz - e);
+          const gl = Math.hypot(gx, gz);
+          if (gl > 1e-6) {
+            const ux = gx / gl, uz = gz / gl;             // uphill direction
+            const into = velocity.x * ux + velocity.z * uz;
+            if (into > 0) { velocity.x -= into * ux; velocity.z -= into * uz; }
+            stepX = velocity.x * dt;
+            stepZ = velocity.z * dt;
+            // If sliding still lands somewhere unclimbable, give up on this step
+            // only — leave the velocity alone so the next frame can retry.
+            if (slopeAt(node.position.x + stepX, node.position.z + stepZ) > maxSlopeRad) {
+              stepX = 0; stepZ = 0;
+            }
+          } else {
+            stepX = 0; stepZ = 0;
+          }
         }
       }
       node.position.x += stepX;
@@ -315,7 +338,18 @@ export function createController(ctx) {
 
       // ---- pose ----------------------------------------------------------
       const speed = Math.hypot(velocity.x, velocity.z);
-      const nextPose = speed < POSE_IDLE_MAX ? 'idle' : speed < POSE_WALK_MAX ? 'walk' : 'run';
+      // Hysteresis on the drop to idle. A hard stop — running into terrain, or
+      // a single frame of blocked movement — otherwise snaps the whole body to
+      // the idle pose in one frame: lean vanishes, arms drop, cape goes
+      // vertical. Only fall to idle once the character has genuinely been still
+      // for a moment, and never while the player is still asking to move.
+      let nextPose = speed < POSE_IDLE_MAX ? 'idle' : speed < POSE_WALK_MAX ? 'walk' : 'run';
+      if (nextPose === 'idle') {
+        stillFrames++;
+        if (stillFrames < IDLE_HOLD_FRAMES || hasInput) nextPose = pose === 'idle' ? 'idle' : pose;
+      } else {
+        stillFrames = 0;
+      }
       // Speed goes across EVERY frame, not just on pose changes — the gait
       // derives its cadence from it, so a stale value is exactly the foot-slide
       // this is meant to remove.

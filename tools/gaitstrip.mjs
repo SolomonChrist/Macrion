@@ -119,6 +119,14 @@ const stepMs = Math.round((cycle * 1000) / FRAMES);
 const shots = [];
 for (let i = 0; i < FRAMES; i++) {
   const f = String(i).padStart(2, '0');
+  // Re-assert the held keys EVERY frame. Taking a screenshot blurs the page,
+  // and the controller clears held keys on blur — without this the character
+  // stops moving after the first capture and the whole strip reads as a freeze,
+  // which is a tooling artifact, not a game bug.
+  await page.evaluate((p) => {
+    if (p === 'run') window.dispatchEvent(new KeyboardEvent('keydown', { key: 'shift' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w' }));
+  }, POSE);
   await page.screenshot({ path: resolve(outDir, `f${f}.png`) });
   const s = await page.evaluate(() => {
     const c = MACRION.engine.systems.character;

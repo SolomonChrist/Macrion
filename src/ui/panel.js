@@ -63,33 +63,52 @@ export function createPanel(ctx) {
   /* ---- character upload ---- */
   el.appendChild(h('<h4>Character</h4>'));
   const upWrap = h(`<div>
-    <input type="file" id="charfiles" multiple accept=".fbx,.glb,.gltf" hidden />
+    <input type="file" id="charfiles" multiple accept=".fbx,.glb,.gltf,.bin,.jpg,.jpeg,.png" hidden />
+    <input type="file" id="chardir" webkitdirectory directory multiple hidden />
     <div class="row">
-      <button type="button" id="charpick">upload FBX / GLB</button>
+      <button type="button" id="charpick">upload files</button>
+      <button type="button" id="chardirpick">upload folder</button>
     </div>
-    <p class="note" id="charnote">Select the character <em>and</em> its animation files together.</p>
+    <p class="note" id="charnote">FBX/GLB: pick the model + its animation files. <br />GLTF: use <em>upload folder</em> &mdash; a .gltf needs its .bin and textures too.</p>
   </div>`);
   el.appendChild(upWrap);
   const fileInput = upWrap.querySelector('#charfiles');
   const charNote = upWrap.querySelector('#charnote');
+  const dirInput = upWrap.querySelector('#chardir');
   upWrap.querySelector('#charpick').addEventListener('click', () => fileInput.click());
+  upWrap.querySelector('#chardirpick').addEventListener('click', () => dirInput.click());
 
-  fileInput.addEventListener('change', async () => {
-    const files = [...fileInput.files];
+  async function ingest(input) {
+    const files = [...input.files];
     if (!files.length) return;
     const { UPLOADS } = await import('../entities/external.js');
 
     // Register every file under its own name so the @pose sibling lookup finds
     // the animation clips without a round trip to the server.
-    for (const f of files) UPLOADS.set(f.name, URL.createObjectURL(f));
+    // Register under BOTH the folder-relative path and the bare filename, so a
+    // .gltf's relative references resolve either way.
+    for (const f of files) {
+      const url = URL.createObjectURL(f);
+      UPLOADS.set(f.name, url);
+      const rel = f.webkitRelativePath;
+      if (rel) {
+        UPLOADS.set(rel, url);
+        UPLOADS.set(rel.split('/').slice(1).join('/'), url);
+      }
+    }
 
     // The character is whichever file has no @pose suffix; otherwise the first.
-    const model = files.find((f) => !f.name.includes('@')) ?? files[0];
+    const models = files.filter((f) => /.(fbx|glb|gltf)$/i.test(f.name));
+    if (!models.length) { charNote.textContent = 'no .fbx / .glb / .gltf in that selection'; return; }
+    const model = models.find((f) => !f.name.includes('@')) ?? models[0];
+    const key = model.webkitRelativePath
+      ? model.webkitRelativePath.split('/').slice(1).join('/')
+      : model.name;
     charNote.innerHTML = `loading <span class="hint">${model.name}</span> (${files.length} file${files.length > 1 ? 's' : ''})…`;
 
     try {
       const { createExternalCharacter } = await import('../entities/external.js');
-      const next = createExternalCharacter(engine.ctx, model.name);
+      const next = createExternalCharacter(engine.ctx, key);
       const old = sys().character;
       if (old?.object3D) engine.scene.remove(old.object3D);
       const i = engine.modules.indexOf(old);
@@ -101,7 +120,9 @@ export function createPanel(ctx) {
     } catch (err) {
       charNote.textContent = `failed: ${err.message}`;
     }
-  });
+  }
+  fileInput.addEventListener('change', () => ingest(fileInput));
+  dirInput.addEventListener('change', () => ingest(dirInput));
 
   const charRow = section('');
   btn(charRow, 'restore Oz', async () => {

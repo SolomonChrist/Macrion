@@ -67,9 +67,34 @@ function resolve(name) {
   return UPLOADS.get(name) ?? (BASE + name);
 }
 
+/**
+ * A .gltf is JSON that references its .bin buffer and every texture by RELATIVE
+ * path. When the file arrives from a file picker as a `blob:` URL those paths
+ * have nothing to resolve against, so the model loads with no geometry and no
+ * textures — which is exactly what "it didn't load correctly" looks like.
+ *
+ * This manager rewrites every dependency request back onto the uploaded blobs,
+ * matching first on the full relative path and then on the bare filename, since
+ * browsers report folder uploads with a leading directory segment.
+ */
+function uploadManager() {
+  const mgr = new THREE.LoadingManager();
+  mgr.setURLModifier((url) => {
+    if (/^(blob:|data:)/.test(url)) return url;
+    const clean = url.split('?')[0].replace(/^.*?\/characters\//, '');
+    if (UPLOADS.has(clean)) return UPLOADS.get(clean);
+    const base = clean.split('/').pop();
+    for (const [k, v] of UPLOADS) if (k.split('/').pop() === base) return v;
+    return url;
+  });
+  return mgr;
+}
+
 function load(url, name = url) {
   return new Promise((res, rej) => {
-    loaderFor(url, name).load(url, res, undefined, rej);
+    const mgr = UPLOADS.size ? uploadManager() : undefined;
+    const l = /\.fbx$/i.test(name) ? new FBXLoader(mgr) : new GLTFLoader(mgr);
+    l.load(url, res, undefined, rej);
   });
 }
 
