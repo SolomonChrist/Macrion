@@ -30,9 +30,11 @@ export function createDevCam(ctx) {
   panel.innerHTML = `
     <div class="dp-title">MACRION</div>
     <div class="dp-rows">
-      <div><b>click</b> capture mouse · <b>esc</b> release</div>
-      <div><b>W A S D</b> move · <b>Q E</b> down / up · <b>shift</b> sprint</div>
-      <div><b>wheel</b> speed · <b>F</b> free camera on / off</div>
+      <div class="dp-hero"><b>P</b> &nbsp;play as Oz &mdash; then <b>W A S D</b>, <b>shift</b> run, <b>space</b> jump</div>
+      <div><b>B</b> sandbox panel &mdash; volume, animations, music</div>
+      <div class="dp-sep"></div>
+      <div><b>F</b> free camera · <b>click</b> capture mouse · <b>esc</b> release</div>
+      <div><b>W A S D</b> fly · <b>Q E</b> down / up · <b>wheel</b> speed</div>
       <div><b>1-9</b> jump to capture pose</div>
       <div><b>, .</b> time of day · <b>T</b> cycle weather</div>
       <div><b>H</b> hide this panel</div>
@@ -47,6 +49,9 @@ export function createDevCam(ctx) {
       text-shadow:0 1px 2px rgba(0,0,0,.8);pointer-events:none;backdrop-filter:blur(3px)}
     #devpanel.hidden{display:none}
     .dp-title{font-size:10px;letter-spacing:.22em;color:#e8a33d;margin-bottom:6px}
+    .dp-hero{color:#fff;margin-bottom:2px}
+    .dp-hero b{color:#e8a33d}
+    .dp-sep{height:1px;background:rgba(150,180,215,.18);margin:6px 0}
     #devpanel b{color:#fff;font-weight:600}
     #toast{position:fixed;left:50%;top:22px;transform:translateX(-50%);z-index:21;
       padding:7px 16px;background:rgba(8,12,18,.8);border:1px solid rgba(150,180,215,.22);

@@ -17,3 +17,7 @@ Thumbs.db
 # Heartbeats are runtime agent state, not source.
 # Kept out of history but the directory is tracked via .gitkeep.
 heartbeats/*.md
+
+# Drop-in character files are third-party assets — never commit them.
+public/characters/*
+!public/characters/README.md

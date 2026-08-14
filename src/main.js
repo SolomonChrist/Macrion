@@ -12,18 +12,25 @@ import { createSky } from './world/sky.js';
 import { createTerrain } from './world/terrain.js';
 import { createPost } from './render/post.js';
 import { createCharacter } from './entities/character.js';
+import { createExternalCharacter, requestedCharacter } from './entities/external.js';
 import { createGame } from './game/game.js';
 import { createController } from './player/controller.js';
 import { createCutscene } from './cinematics/cutscene.js';
 import { createAudio } from './audio/audio.js';
 import { createHUD } from './ui/hud.js';
+import { createPanel } from './ui/panel.js';
 import { createDevCam } from './core/devcam.js';
 
 const engine = new Engine();
 
 engine.registerModule(createTerrain(engine.ctx));
 engine.registerModule(createSky(engine.ctx));
-const character = engine.registerModule(createCharacter(engine.ctx));
+// Swap in a Mixamo/GLB/FBX rig with ?character=Foo.fbx (see public/characters/README.md).
+// Falls back to the procedural Oz when nothing is requested.
+const _extChar = requestedCharacter();
+const character = engine.registerModule(
+  _extChar ? createExternalCharacter(engine.ctx, _extChar) : createCharacter(engine.ctx)
+);
 
 const post = createPost(engine.ctx);
 if (post) {
@@ -39,6 +46,7 @@ engine.systems.player = engine.registerModule(createController(engine.ctx));
 engine.systems.cutscene = engine.registerModule(createCutscene(engine.ctx));
 engine.systems.audio = engine.registerModule(createAudio(engine.ctx));
 engine.systems.hud = engine.registerModule(createHUD(engine.ctx));
+engine.systems.panel = engine.registerModule(createPanel(engine.ctx));
 
 engine.setShot('vista');
 const contract = engine.installContract('macrion.phase1');
@@ -53,6 +61,7 @@ contract.hud = (v) => {
   baseHud(v);
   devcam.setChrome(v);
   engine.systems.hud?.setVisible?.(v);
+  engine.systems.panel?.setVisible?.(v);
 };
 
 engine.start();

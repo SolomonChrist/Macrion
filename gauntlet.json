@@ -1,6 +1,6 @@
 {
   "round": 1,
-  "updated": "2026-08-14 · presentable build",
+  "updated": "2026-08-14 · Oz rebuilt on an analytic head",
   "gpu": "GTX 1660 Ti · D3D11 · 1920×1080",
   "tagline": "One terrain, spanning golden-hour scrubland to cold misty highland as world state. A from-scratch Three.js engine graded against PS4-native reference frames: builders ship, critics score blind, the single biggest gap comes back. Repeat until the tier is indistinguishable.",
   "strip": [
@@ -33,7 +33,7 @@
       "status": "passed",
       "iteration": 2,
       "score": null,
-      "captureDir": "captures/2026-08-14T02-39-52_present",
+      "captureDir": "captures/2026-08-14T02-45-35_oz-anime-final",
       "gap": "ROUND 2 LANDED. The corduroy ripple both critics independently traced to macRelief() is gone from every shot. Scatter density is up 3-4x inside the playable bowl, storm now shows real standing water, and backlit scrub genuinely glows gold against the dark hillside — the FFXV money shot works. Not re-scored yet.",
       "next": "Held by directive until gameplay systems are running. Re-score after phase 1 functionality is complete.",
       "eta": "paused by directive",
@@ -83,9 +83,9 @@
       "status": "passed",
       "iteration": 3,
       "score": null,
-      "captureDir": "captures/2026-08-14T02-39-52_present",
-      "gap": "OZ IS BUILT. Anime face with large expressive eyes and clean lid lines, sculpted spiked shonen hair that reads as a silhouette, tunic with cape, bracers, belt and boots, sword at his side. Three earlier rendering bugs were found and fixed along the way: surface-nets emitting every quad with the same winding so half of every mesh was inverted; procedural detail quoted at 940 cycles per metre putting cloth weave past Nyquist so the shading normal was randomised per fragment; and mid-face mass ellipsoids sitting 20-30mm in front of every feature authored on them so eyelids and brows never reached the zero level set.",
-      "next": "Presentable. Remaining polish: sprint and jog share one gait so sprinting shows mild foot-slide, and the flute is not yet on his person."
+      "captureDir": "captures/2026-08-14T02-45-35_oz-anime-final",
+      "gap": "OZ REBUILT — and the fix was architectural, not a bug hunt. The head was being polygonized by surface nets on a 5.8mm grid, but a stylized anime face is built from 1-2mm crisp edges: a lash line, a brow edge, a lip line. A fifth of a cell. No amount of re-seating primitives could ever resolve those features, which is why two rounds of repair kept producing speckle. The SDF head and hair meshing passes were removed entirely and replaced with an analytic head surface, with every feature authored in face-relative coordinates — across the face, above the eye line, along the normal — so a feature structurally cannot end up buried inside the skull. Features are now exact triangles: sclera lens with upper-lid cast shadow, iris with limbal ring and value gradient, pupil, two specular dots, a tapered lash line with an outer flick, brow ribbons. Hair is a lofted cap plus 23 sculpted bezier spikes. Sword and flute are on his person. 45,362 triangles, one draw call, and two back-to-back capture runs hash bit-identical.",
+      "next": "Remaining: no cel shading or outline pass yet (the single biggest remaining lever for an anime read), hair has no secondary motion so it will feel stiff at a run, gaze is baked so he cannot look at anything, no visemes, and the sword under-reads at hero distance because the coat flare eats its upper half."
     },
     {
       "id": "environment",
@@ -94,7 +94,7 @@
       "status": "refining",
       "iteration": 1,
       "score": null,
-      "captureDir": "captures/2026-08-14T02-39-52_present",
+      "captureDir": "captures/2026-08-14T02-45-35_oz-anime-final",
       "gap": "SNAGULAS BUILT — three types from one generator. Grunt at 1.66m squat and barrel-chested, stalker at 1.92m starved with long claws and a whip tail, brute at 2.10m with two metres of shoulder and 98mm tusks. Held constant so they read as a family: hunched carriage, forward-hanging arms, fixed snarl, recessed red eye under a heavy brow. Instanced skinning via a bone-palette texture keeps it to one colour and one shadow draw per species and LOD. Built on the same rig as Oz, with its three unused cloth bones re-seated as a tail so it gets lagged sway for free. Not yet wired into main.js.",
       "next": "Wire into main.js alongside combat and the boss, then playtest a real fight."
     },
