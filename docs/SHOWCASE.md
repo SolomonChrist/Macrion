@@ -101,6 +101,55 @@ showcase captures and the live launch link.
 
 ---
 
+## Integration contracts — already built, do not rebuild
+
+Wave 1 landed these. Wire to them; do not reinvent them.
+
+### Game event bus — `engine.systems.game`
+```js
+game.on(evt, fn); game.emit(evt, data);
+game.state; game.startQuest(id); game.advance(objectiveId); game.grantLevel(power);
+game.serialize(); game.deserialize(json);
+```
+Events already emitted: `quest:start`, `quest:advance`, `quest:complete`, `dialogue:start`,
+`dialogue:end`, `area:enter`, `combat:start`, `item:collect`, `levelup`.
+
+**Combat and boss builders: emit these** so audio and HUD react without further wiring —
+`combat:start`, `enemy:hit`, `enemy:death`, `boss:enter`, `boss:death`, `player:hit`.
+
+### Audio — `engine.systems.audio`
+```js
+audio.setMusicState('explore'|'alert'|'combat'|'boss'|'resolve');
+audio.play(id, { position: {x,y,z} });   // positional supported and stress-tested
+audio.sarahApparition(); audio.sarahMemory(intensity); audio.sarahWedding();
+audio.setStoryProximity(0..1);
+```
+SFX ids ready now: `swordSwing`, `swordHit`, `enemyHit`, `enemyDeath`, `levelUp`, `footstep`,
+`landing`, `interact`, `dialogueAdvance`, `questAccept`, `questComplete`.
+
+Audio has a `wireGameEvents()` bridge that subscribes to the bus. It was written against a
+`game.js` that was still a stub at the time; the bus exists now, so **verify that bridge
+actually connects** rather than assuming it does.
+
+### HUD — `engine.systems.hud`
+```js
+hud.setVisible(v); hud.toast(msg); hud.dialogue(lines); hud.prompt(text);
+hud.setObjective(text); hud.setHealth(cur, max);
+```
+`setHealth` exists and is unused — the combat builder should drive it.
+
+### Cutscenes — `engine.systems.cutscene`
+```js
+cutscene.define(id, script); cutscene.play(id); cutscene.skip(); cutscene.isPlaying();
+```
+Takes camera authority via `engine.setMode('cutscene')` and restores the prior mode. Verified
+against nested `play()`, mid-play `skip()`, and `skip()` with nothing playing.
+
+### Capture harness gotcha
+Captures must set `MACRION_PORT` env, not `--port`, or Vite's HMR client dials the wrong port
+and logs 3 phantom console errors. `tools/shots.mjs` already does this — if you invoke Chromium
+yourself, copy its GPU launch args or `requestAnimationFrame` barely ticks headless.
+
 ## Non-negotiables
 
 - Three.js only. Everything procedural. No asset packs, no downloaded textures, no sample audio.
