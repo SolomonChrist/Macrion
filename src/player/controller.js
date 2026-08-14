@@ -316,6 +316,10 @@ export function createController(ctx) {
       // ---- pose ----------------------------------------------------------
       const speed = Math.hypot(velocity.x, velocity.z);
       const nextPose = speed < POSE_IDLE_MAX ? 'idle' : speed < POSE_WALK_MAX ? 'walk' : 'run';
+      // Speed goes across EVERY frame, not just on pose changes — the gait
+      // derives its cadence from it, so a stale value is exactly the foot-slide
+      // this is meant to remove.
+      char?.setSpeed?.(speed);
       if (nextPose !== pose) {
         pose = nextPose;
         char.setPose?.(pose);

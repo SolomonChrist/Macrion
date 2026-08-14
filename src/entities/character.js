@@ -24,6 +24,7 @@
 import * as THREE from 'three';
 import { SHOTS } from '../core/engine.js';
 import { buildCharacterGeometry } from './character/build.js';
+import { applyFootIK } from './character/ik.js';
 import { buildSkeleton, paintWeights, makeAnimator } from './character/rig.js';
 import { createCharacterMaterial } from './character/material.js';
 import { mergeParts, clamp01 } from './character/geom.js';
@@ -198,6 +199,7 @@ export function createCharacter(ctx) {
   world.add(decal);
 
   const animator = makeAnimator(byName);
+  let ikWeight = 1;
   animator.setWind(ctx.weather?.wind ?? 0.35);
   animator.apply(ctx.time ?? 0);
 
@@ -229,6 +231,14 @@ export function createCharacter(ctx) {
     /** Pure function of ctx.time — the capture harness pins it at 120.0. */
     update(c) {
       animator.apply(c.time ?? 0);
+      // Open-loop gait knows nothing about the ground; correct it against the
+      // real heightfield. Must run after apply(), which rewrites every bone.
+      applyFootIK({
+        bones: byName,
+        group,
+        heightAt: c.terrain?.heightAt,
+        weight: ikWeight,
+      });
       material.userData.uniforms.uCharTime.value = c.time ?? 0;
     },
 
@@ -243,6 +253,10 @@ export function createCharacter(ctx) {
     onSun() { /* lighting is the Atmosphere module's; env map is picked up automatically */ },
 
     setPose(name) { animator.setPose(name); },
+    /** Ground speed in m/s — drives gait cadence so feet do not slide. */
+    setSpeed(v) { animator.setSpeed?.(v); },
+    /** 0 disables foot IK (useful in cutscenes / on flat arenas). */
+    setIK(w) { ikWeight = Math.min(1, Math.max(0, w)); },
     getPose() { return animator.getPose(); },
   };
 }

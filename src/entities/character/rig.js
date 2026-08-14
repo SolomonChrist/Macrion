@@ -220,8 +220,15 @@ function idlePose(P, t, wind) {
 }
 
 /** Locomotion cycles. Rough but structurally correct — Interaction drives them. */
-function gaitPose(P, t, run, wind) {
-  const f = run ? 1.62 : 0.92;                      // cycles / second
+function gaitPose(P, t, run, wind, speed) {
+  // Cadence must come from ground speed, or the feet slide. Stride length grows
+  // with speed (people lengthen their step before they quicken it), so
+  // frequency = speed / stride rather than a constant. Falls back to the old
+  // fixed cadence when no speed is supplied.
+  const stride = run ? 1.40 + 0.35 * speed : 0.85 + 0.28 * speed;
+  const f = speed > 0.05
+    ? Math.min(Math.max(speed / stride, 0.35), 3.0)
+    : (run ? 1.62 : 0.92);                          // cycles / second
   const ph = t * f * Math.PI * 2;
   const A = run ? 1.0 : 0.55;
   const sw = Math.sin(ph), cw = Math.cos(ph);
@@ -276,16 +283,20 @@ export function makeAnimator(byName) {
   }
   let pose = 'idle';
   let wind = 0.35;
+  let speed = 0;
 
   return {
     setPose(name) { if (name === 'idle' || name === 'walk' || name === 'run') pose = name; },
     getPose() { return pose; },
     setWind(w) { wind = clamp(w, 0, 1); },
+    /** Ground speed in m/s. Drives gait cadence so the feet do not slide. */
+    setSpeed(v) { speed = Math.max(0, v || 0); },
+    getSpeed() { return speed; },
     /** Pure function of t. Writes bone local transforms. */
     apply(t) {
       for (const k in P) delete P[k];
       if (pose === 'idle') idlePose(P, t, wind);
-      else gaitPose(P, t, pose === 'run', wind);
+      else gaitPose(P, t, pose === 'run', wind, speed);
       for (const n of names) {
         const b = byName.get(n);
         const p = P[n];

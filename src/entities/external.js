@@ -23,6 +23,9 @@ export const SPAWN = { x: 12, z: 26 };
 
 const BASE = '/characters/';
 
+/** Blob URLs registered by the in-page uploader, keyed by filename. */
+export const UPLOADS = new Map();
+
 /** Which file to load, from ?character= or localStorage. Null = use procedural. */
 export function requestedCharacter() {
   const q = new URLSearchParams(location.search).get('character');
@@ -51,13 +54,22 @@ function classify(clipName, fileHint = '') {
   return null;
 }
 
-function loaderFor(url) {
-  return /\.fbx$/i.test(url) ? new FBXLoader() : new GLTFLoader();
+/**
+ * Pick the loader from the FILENAME, not the URL — an uploaded file arrives as
+ * a `blob:` URL with no extension, so sniffing the URL would always fall
+ * through to GLTFLoader and fail on every FBX.
+ */
+function loaderFor(url, name = url) {
+  return /\.fbx$/i.test(name) ? new FBXLoader() : new GLTFLoader();
 }
 
-function load(url) {
+function resolve(name) {
+  return UPLOADS.get(name) ?? (BASE + name);
+}
+
+function load(url, name = url) {
   return new Promise((res, rej) => {
-    loaderFor(url).load(url, res, undefined, rej);
+    loaderFor(url, name).load(url, res, undefined, rej);
   });
 }
 
@@ -97,8 +109,8 @@ export function createExternalCharacter(ctx, file) {
 
   (async () => {
     try {
-      const url = BASE + file;
-      const { root, clips } = normalize(await load(url));
+      const url = resolve(file);
+      const { root, clips } = normalize(await load(url, file));
 
       root.traverse((o) => {
         if (!o.isMesh && !o.isSkinnedMesh) return;
@@ -136,7 +148,7 @@ export function createExternalCharacter(ctx, file) {
       for (const p of Object.keys(POSE_PATTERNS)) {
         const sib = `${base}@${p}${ext}`;
         try {
-          const r = normalize(await load(BASE + sib));
+          const r = normalize(await load(resolve(sib), sib));
           for (const clip of r.clips) found.push({ clip, hint: sib });
         } catch { /* optional */ }
       }

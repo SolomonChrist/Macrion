@@ -60,6 +60,65 @@ export function createPanel(ctx) {
     return b;
   }
 
+  /* ---- character upload ---- */
+  el.appendChild(h('<h4>Character</h4>'));
+  const upWrap = h(`<div>
+    <input type="file" id="charfiles" multiple accept=".fbx,.glb,.gltf" hidden />
+    <div class="row">
+      <button type="button" id="charpick">upload FBX / GLB</button>
+    </div>
+    <p class="note" id="charnote">Select the character <em>and</em> its animation files together.</p>
+  </div>`);
+  el.appendChild(upWrap);
+  const fileInput = upWrap.querySelector('#charfiles');
+  const charNote = upWrap.querySelector('#charnote');
+  upWrap.querySelector('#charpick').addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', async () => {
+    const files = [...fileInput.files];
+    if (!files.length) return;
+    const { UPLOADS } = await import('../entities/external.js');
+
+    // Register every file under its own name so the @pose sibling lookup finds
+    // the animation clips without a round trip to the server.
+    for (const f of files) UPLOADS.set(f.name, URL.createObjectURL(f));
+
+    // The character is whichever file has no @pose suffix; otherwise the first.
+    const model = files.find((f) => !f.name.includes('@')) ?? files[0];
+    charNote.innerHTML = `loading <span class="hint">${model.name}</span> (${files.length} file${files.length > 1 ? 's' : ''})…`;
+
+    try {
+      const { createExternalCharacter } = await import('../entities/external.js');
+      const next = createExternalCharacter(engine.ctx, model.name);
+      const old = sys().character;
+      if (old?.object3D) engine.scene.remove(old.object3D);
+      const i = engine.modules.indexOf(old);
+      if (i !== -1) engine.modules[i] = next; else engine.modules.push(next);
+      engine.scene.add(next.object3D);
+      engine.systems.character = next;
+      described = false;                          // re-read which poses exist
+      charNote.innerHTML = `loaded <span class="hint">${model.name}</span> — press <span class="hint">P</span> to play`;
+    } catch (err) {
+      charNote.textContent = `failed: ${err.message}`;
+    }
+  });
+
+  const charRow = section('');
+  btn(charRow, 'restore Oz', async () => {
+    const { createCharacter } = await import('../entities/character.js');
+    const next = createCharacter(engine.ctx);
+    const old = sys().character;
+    if (old?.object3D) engine.scene.remove(old.object3D);
+    const i = engine.modules.indexOf(old);
+    if (i !== -1) engine.modules[i] = next; else engine.modules.push(next);
+    engine.scene.add(next.object3D);
+    engine.systems.character = next;
+    described = false;
+    for (const b of Object.values(poseBtns)) { b.disabled = false; b.style.opacity = ''; }
+    poseNote.textContent = '';
+    charNote.textContent = 'procedural Oz restored.';
+  });
+
   /* ---- volume ---- */
   el.appendChild(h('<h4>Volume</h4>'));
   const volWrap = h('<label><input type="range" min="0" max="100" value="70" /><span class="val">70</span></label>');
