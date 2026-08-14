@@ -199,7 +199,11 @@ export function createCharacter(ctx) {
   world.add(decal);
 
   const animator = makeAnimator(byName);
-  let ikWeight = 1;
+  // Foot IK is OFF by default: the two-bone solve currently over-bends the knee
+  // (measured -44deg resting thigh vs +18deg without it), which reads as wading.
+  // Ankle-to-slope alignment and pelvis drop are sound; the bend-axis sign in
+  // solveTwoBone needs verifying. Toggle with setIK(1) or the B panel.
+  let ikWeight = 0;
   animator.setWind(ctx.weather?.wind ?? 0.35);
   animator.apply(ctx.time ?? 0);
 

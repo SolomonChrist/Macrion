@@ -150,6 +150,8 @@ export function createPanel(ctx) {
       for (const [k, b] of Object.entries(poseBtns)) b.classList.toggle('on', k === p);
     });
   }
+  let ikOn = false;
+  btn(poseRow, 'IK', (b) => { ikOn = !ikOn; b.classList.toggle('on', ikOn); sys().character?.setIK?.(ikOn ? 1 : 0); });
   const poseNote = h('<p class="note"></p>');
   el.appendChild(poseNote);
 

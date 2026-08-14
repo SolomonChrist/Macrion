@@ -29,7 +29,10 @@ const _qw = new THREE.Quaternion();
 const _qp = new THREE.Quaternion();
 
 const ANKLE_H = 0.085;      // ankle bone height above the sole
-const MAX_PELVIS_DROP = 0.42;
+const MAX_PELVIS_DROP = 0.18;
+// Ignore tiny penetrations. Correcting every millimetre makes the legs chase
+// terrain noise and read as a permanent crouch, which is worse than the sink.
+const DEADZONE = 0.045;
 const REACH_EPS = 0.995;    // never fully straighten — a locked knee looks wrong
 
 /** Apply a world-space delta rotation to a bone, preserving its parent chain. */
@@ -125,7 +128,7 @@ export function applyFootIK({ bones, group, heightAt, weight = 1 }) {
     // character bob upward on every step, which reads far worse than a slightly
     // sunk stance.
     const drop = _c.y - gy;
-    if (drop < 0) worstDrop = Math.min(worstDrop, drop);
+    if (drop < -DEADZONE) worstDrop = Math.min(worstDrop, drop + DEADZONE);
   }
   if (worstDrop < 0) {
     const d = Math.max(worstDrop, -MAX_PELVIS_DROP) * weight;
@@ -145,8 +148,8 @@ export function applyFootIK({ bones, group, heightAt, weight = 1 }) {
     leg.foot.getWorldPosition(_c);
     const gy = want[i];
     // Never push a foot DOWN — during the swing phase it is meant to be airborne.
-    if (_c.y >= gy - 1e-4) continue;
-    _t.set(_c.x, _c.y + (gy - _c.y) * weight, _c.z);
+    if (_c.y >= gy - DEADZONE) continue;
+    _t.set(_c.x, _c.y + (gy - DEADZONE - _c.y) * weight, _c.z);
     solveTwoBone(leg.thigh, leg.shin, leg.foot, _t, pole);
   }
 
@@ -162,7 +165,7 @@ export function applyFootIK({ bones, group, heightAt, weight = 1 }) {
     _v1.set(0, 1, 0).applyQuaternion(leg.foot.getWorldQuaternion(_qw));
     _q.setFromUnitVectors(_v1, _v2);
     // Partial blend — a foot glued perfectly flat to the terrain reads stiff.
-    _q.slerp(new THREE.Quaternion(), 1 - 0.65 * weight);
+    _q.slerp(new THREE.Quaternion(), 1 - 0.45 * weight);
     rotateWorld(leg.foot, _q);
   }
 }
