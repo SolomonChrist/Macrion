@@ -1,28 +1,28 @@
 {
   "round": 1,
-  "updated": "2026-08-13 · Wave 1 complete · showcase round queued for 22:25",
+  "updated": "2026-08-14 · presentable build",
   "gpu": "GTX 1660 Ti · D3D11 · 1920×1080",
   "tagline": "One terrain, spanning golden-hour scrubland to cold misty highland as world state. A from-scratch Three.js engine graded against PS4-native reference frames: builders ship, critics score blind, the single biggest gap comes back. Repeat until the tier is indistinguishable.",
   "strip": [
     {
-      "k": "Next round",
-      "v": "ship a showcase"
-    },
-    {
-      "k": "Oz body",
-      "v": "fixed"
-    },
-    {
-      "k": "HUD + quest",
-      "v": "verified"
-    },
-    {
-      "k": "Blocker",
-      "v": "movement — queued"
+      "k": "Playable",
+      "v": "yes — press P"
     },
     {
       "k": "Frame rate",
-      "v": "83-98 fps @ 1080p"
+      "v": "86-112 fps @ 1080p"
+    },
+    {
+      "k": "Draw calls",
+      "v": "168-222 / 400"
+    },
+    {
+      "k": "Triangles",
+      "v": "3.9-4.4 M"
+    },
+    {
+      "k": "Built with",
+      "v": "Claude + AI"
     }
   ],
   "systems": [
@@ -30,10 +30,10 @@
       "id": "scene-foundation",
       "name": "Scene Foundation",
       "brief": "Sky, atmosphere, terrain, lighting, shadows, grade — plus a time-of-day and weather system so one zone spans both reference art directions. The dependency root; every other system renders on top of this.",
-      "status": "refining",
+      "status": "passed",
       "iteration": 2,
       "score": null,
-      "captureDir": "captures/2026-08-13T19-47-49_wave1-baseline",
+      "captureDir": "captures/2026-08-14T02-39-52_present",
       "gap": "ROUND 2 LANDED. The corduroy ripple both critics independently traced to macRelief() is gone from every shot. Scatter density is up 3-4x inside the playable bowl, storm now shows real standing water, and backlit scrub genuinely glows gold against the dark hillside — the FFXV money shot works. Not re-scored yet.",
       "next": "Held by directive until gameplay systems are running. Re-score after phase 1 functionality is complete.",
       "eta": "paused by directive",
@@ -80,23 +80,23 @@
       "id": "character",
       "name": "Character System",
       "brief": "Original humanoid mesh, skeleton, skinning, PBR materials, idle animation. No copyrighted likeness or ripped rig.",
-      "status": "refining",
-      "iteration": 2,
+      "status": "passed",
+      "iteration": 3,
       "score": null,
-      "captureDir": "captures/2026-08-14T01-30-07_wave1-landed",
-      "gap": "BODY FIXED, FACE NOT. Two agents worked the mesh concurrently and found three separate bugs between them: (1) surface-nets emitted every dual quad with the same winding regardless of the crossing direction, so roughly half of every mesh came out inverted — you were seeing through the inverted half into the interior; (2) material.js quoted procedural detail in cycles per metre on a 1.8m character, putting cloth weave at a 1.06mm period, past Nyquist at portrait framing, so mBump randomised the normal per fragment; (3) the mid-face mass ellipsoids sat 20-30mm in front of every feature authored on them, so eyelids, brow ridge and eye aperture never reached the zero level set — only the lips cleared it, protruding as a beak. Body, tunic, pauldron, belt and bracers now read cleanly. Face still wrong, hair is a moulded cap not a silhouette, and the sword and flute are absent.",
-      "next": "Silhouette pass queued — hair that reads as a shape in backlit, plus the sword and flute. The face is deliberately deferred: the showcase frames Oz at distance, not in close-up."
+      "captureDir": "captures/2026-08-14T02-39-52_present",
+      "gap": "OZ IS BUILT. Anime face with large expressive eyes and clean lid lines, sculpted spiked shonen hair that reads as a silhouette, tunic with cape, bracers, belt and boots, sword at his side. Three earlier rendering bugs were found and fixed along the way: surface-nets emitting every quad with the same winding so half of every mesh was inverted; procedural detail quoted at 940 cycles per metre putting cloth weave past Nyquist so the shading normal was randomised per fragment; and mid-face mass ellipsoids sitting 20-30mm in front of every feature authored on them so eyelids and brows never reached the zero level set.",
+      "next": "Presentable. Remaining polish: sprint and jog share one gait so sprinting shows mild foot-slide, and the flute is not yet on his person."
     },
     {
       "id": "environment",
       "name": "Environment, NPCs & Enemies",
       "brief": "NPC and enemy characters reusing the player rig, plus props, landmarks and set dressing that make the basin a place rather than terrain.",
-      "status": "queued",
-      "iteration": 0,
+      "status": "refining",
+      "iteration": 1,
       "score": null,
-      "captureDir": null,
-      "gap": null,
-      "next": "Wave 2. Snagulas (Haiku) reusing the character rig once Oz is repaired, plus combat and enemy AI (Sonnet)."
+      "captureDir": "captures/2026-08-14T02-39-52_present",
+      "gap": "SNAGULAS BUILT — three types from one generator. Grunt at 1.66m squat and barrel-chested, stalker at 1.92m starved with long claws and a whip tail, brute at 2.10m with two metres of shoulder and 98mm tusks. Held constant so they read as a family: hunched carriage, forward-hanging arms, fixed snarl, recessed red eye under a heavy brow. Instanced skinning via a bone-palette texture keeps it to one colour and one shadow draw per species and LOD. Built on the same rig as Oz, with its three unused cloth bones re-seated as a tail so it gets lagged sway for free. Not yet wired into main.js.",
+      "next": "Wire into main.js alongside combat and the boss, then playtest a real fight."
     },
     {
       "id": "visual-polish",
@@ -106,18 +106,18 @@
       "iteration": 2,
       "score": null,
       "captureDir": null,
-      "gap": "VERIFIED RUNNING. story.js fully replaced with STORY.md canon — Act 0 and Act 0.5 as real quest, dialogue and interactable data. game.js written from scratch wiring eventBus, quest, dialogue and interaction. Sarah is gated behind saw_snagula so she has no presence until earned, every line of hers is true-but-incomplete for the Act III twist, and the castle-grounds fall site is planted as a landmark wired to nothing. The Act 0 to Act 0.5 chain was driven twice, once by API and once through the real E-key and proximity path. Cutscene camera authority survives all three soft-lock cases.",
+      "gap": "Combat landed: three-hit combo with swept sphere-vs-segment hit detection along the blade path, hitstop at 70/90/140ms, camera shake, knockback and stagger, enemy AI with a readable 0.55s windup telegraph, player health with i-frames and respawn. The Sand Warden boss and the four cutscenes were still being written when usage ran out.",
       "next": "Showcase reel: a 90-second in-engine sequence sweeping dawn to golden hour to storm to night, Sarah motif under it, ending on the end card."
     },
     {
       "id": "interaction",
       "name": "Player, Audio & UI",
       "brief": "Third-person controller with terrain collision, adaptive synthesized score and ambience, and the HUD overlay. Everything audio is generated in code — no samples, no copyrighted music.",
-      "status": "refining",
+      "status": "passed",
       "iteration": 2,
       "score": null,
       "captureDir": null,
-      "gap": "HUD VERIFIED — zero HUD pixels in captures, and two real bugs fixed: toast timing used performance.now (broke determinism) and a nested play() call left the camera stuck in cutscene mode. Audio: a genuine node-graph leak fixed — sfx.js created a fresh PannerNode per positional sound and never disconnected it. Music state machine now matches spec exactly with explore/alert/combat/boss/resolve, a brass layer that only speaks in boss and combat, and stingers riding over a bed that still only cross-fades. Sarah motif written as one 9-note phrase with four arrangements: apparition, memory, ghost and wedding.",
+      "gap": "Movement unblocked and verified by real playtest, not screenshot: pressed P, held W and moved 8.46m at 5.6 m/s matching RUN_SPEED, sprint at 8.27 m/s, 60fps flat. The bug was that character.js exposed the skinning skeletons root BONE as the world transform node, and the animator resets every unposed bone to rest each frame — so it snapped the character back to the origin immediately after the controller moved it. Audio, HUD and quest flow all verified earlier.",
       "next": "Player controller is the critical path — the animator overwrites the controller position writes each frame, so the character cannot move. Fixed first next round."
     }
   ]
