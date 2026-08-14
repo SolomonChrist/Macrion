@@ -59,10 +59,14 @@ function reclaimPort() {
 function startServer() {
   reclaimPort();
   const bin = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  const p = spawn(bin, ['vite', '--port', String(PORT), '--strictPort'], {
+  // Pass the port via env, not --port: vite's injected HMR client uses the
+  // CONFIG port, so a CLI override leaves the client dialing the wrong port and
+  // every capture picks up 3 phantom console errors from the failed handshake.
+  const p = spawn(bin, ['vite'], {
     cwd: ROOT,
     stdio: ['ignore', 'pipe', 'pipe'],
     shell: process.platform === 'win32',
+    env: { ...process.env, MACRION_PORT: String(PORT) },
   });
   return new Promise((res, rej) => {
     const to = setTimeout(() => rej(new Error('vite did not start in 40s')), 40000);

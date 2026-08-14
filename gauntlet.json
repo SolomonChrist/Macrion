@@ -1,28 +1,28 @@
 {
   "round": 1,
-  "updated": "2026-08-13 · paused for usage reset · resumes 22:25",
+  "updated": "2026-08-13 · Wave 1 complete · showcase round queued for 22:25",
   "gpu": "GTX 1660 Ti · D3D11 · 1920×1080",
   "tagline": "One terrain, spanning golden-hour scrubland to cold misty highland as world state. A from-scratch Three.js engine graded against PS4-native reference frames: builders ship, critics score blind, the single biggest gap comes back. Repeat until the tier is indistinguishable.",
   "strip": [
     {
+      "k": "Next round",
+      "v": "ship a showcase"
+    },
+    {
       "k": "Oz body",
-      "v": "fixed — aliasing"
+      "v": "fixed"
     },
     {
-      "k": "Oz face",
-      "v": "queued"
+      "k": "HUD + quest",
+      "v": "verified"
     },
     {
-      "k": "HUD",
-      "v": "verified clean"
+      "k": "Blocker",
+      "v": "movement — queued"
     },
     {
       "k": "Frame rate",
-      "v": "93 fps @ 1080p"
-    },
-    {
-      "k": "Agents",
-      "v": "paused for reset"
+      "v": "83-98 fps @ 1080p"
     }
   ],
   "systems": [
@@ -83,9 +83,9 @@
       "status": "refining",
       "iteration": 2,
       "score": null,
-      "captureDir": "captures/2026-08-13T23-37-13_oz-check",
-      "gap": "HALF FIXED. Root cause #1 landed: the shredded surface was never geometry, it was shader aliasing. material.js quoted procedural detail in cycles per metre on a 1.8m character — cloth weave at 940 cyc/m is a 1.06mm period, and at portrait framing one pixel covers 0.5-1mm, so the detail sat past Nyquist. mBump() takes dFdx/dFdy of that height field, so the normal was randomised per fragment. Body, tunic, pauldron, belt and gloves now read cleanly. Root cause #2 remains: the head meshes by surface nets on a 5.8mm grid and several face primitives are under two cells wide (mouth groove 2.4mm, eye aperture 5.3mm, brows 3.3mm), so they mesh as isolated speckle — the scribbled face and misaligned eyes. Fix is queued.",
-      "next": "Face geometry repair queued for the usage reset. The dead agent ruled out skin weights, winding errors, unnormalized normals and duplicate triangles with evidence, so the successor resumes from its heartbeat rather than restarting."
+      "captureDir": "captures/2026-08-14T01-30-07_wave1-landed",
+      "gap": "BODY FIXED, FACE NOT. Two agents worked the mesh concurrently and found three separate bugs between them: (1) surface-nets emitted every dual quad with the same winding regardless of the crossing direction, so roughly half of every mesh came out inverted — you were seeing through the inverted half into the interior; (2) material.js quoted procedural detail in cycles per metre on a 1.8m character, putting cloth weave at a 1.06mm period, past Nyquist at portrait framing, so mBump randomised the normal per fragment; (3) the mid-face mass ellipsoids sat 20-30mm in front of every feature authored on them, so eyelids, brow ridge and eye aperture never reached the zero level set — only the lips cleared it, protruding as a beak. Body, tunic, pauldron, belt and bracers now read cleanly. Face still wrong, hair is a moulded cap not a silhouette, and the sword and flute are absent.",
+      "next": "Silhouette pass queued — hair that reads as a shape in backlit, plus the sword and flute. The face is deliberately deferred: the showcase frames Oz at distance, not in close-up."
     },
     {
       "id": "environment",
@@ -102,23 +102,23 @@
       "id": "visual-polish",
       "name": "Story, Quest & Cinematics",
       "brief": "Original Macrion premise, the first major quest, branching dialogue, progression state, and a data-driven cutscene system with spline camera moves.",
-      "status": "blocked",
-      "iteration": 1,
+      "status": "refining",
+      "iteration": 2,
       "score": null,
       "captureDir": null,
-      "gap": "PARTIALLY BUILT then killed by the spend limit. Surviving and committed: story.js, quest.js, dialogue.js, interaction.js, eventBus.js for game systems, plus cutscene.js and cutscene-data.js for cinematics. None verified end to end.",
-      "next": "Verification queued for the usage reset. Code exists on disk from an interrupted agent but has never been run end to end."
+      "gap": "VERIFIED RUNNING. story.js fully replaced with STORY.md canon — Act 0 and Act 0.5 as real quest, dialogue and interactable data. game.js written from scratch wiring eventBus, quest, dialogue and interaction. Sarah is gated behind saw_snagula so she has no presence until earned, every line of hers is true-but-incomplete for the Act III twist, and the castle-grounds fall site is planted as a landmark wired to nothing. The Act 0 to Act 0.5 chain was driven twice, once by API and once through the real E-key and proximity path. Cutscene camera authority survives all three soft-lock cases.",
+      "next": "Showcase reel: a 90-second in-engine sequence sweeping dawn to golden hour to storm to night, Sarah motif under it, ending on the end card."
     },
     {
       "id": "interaction",
       "name": "Player, Audio & UI",
       "brief": "Third-person controller with terrain collision, adaptive synthesized score and ambience, and the HUD overlay. Everything audio is generated in code — no samples, no copyrighted music.",
-      "status": "blocked",
-      "iteration": 1,
+      "status": "refining",
+      "iteration": 2,
       "score": null,
       "captureDir": null,
-      "gap": "PARTIALLY BUILT then killed by the spend limit. Surviving and committed: six audio modules (synth, score, music, ambience, sfx, audio) all synthesized in code with no samples, plus hud.js/hud.css and the player controller. None verified end to end.",
-      "next": "Audio and HUD: HUD is VERIFIED — zero HUD pixels in captures, cutscene camera authority survives all three soft-lock cases. Audio still unverified; six modules plus sarah.js exist but have never been run."
+      "gap": "HUD VERIFIED — zero HUD pixels in captures, and two real bugs fixed: toast timing used performance.now (broke determinism) and a nested play() call left the camera stuck in cutscene mode. Audio: a genuine node-graph leak fixed — sfx.js created a fresh PannerNode per positional sound and never disconnected it. Music state machine now matches spec exactly with explore/alert/combat/boss/resolve, a brass layer that only speaks in boss and combat, and stingers riding over a bed that still only cross-fades. Sarah motif written as one 9-note phrase with four arrangements: apparition, memory, ghost and wedding.",
+      "next": "Player controller is the critical path — the animator overwrites the controller position writes each frame, so the character cannot move. Fixed first next round."
     }
   ]
 }
