@@ -1,28 +1,28 @@
 {
   "round": 1,
-  "updated": "2026-08-13 · Wave 1 running · 4 agents",
+  "updated": "2026-08-13 · paused for usage reset · resumes 22:25",
   "gpu": "GTX 1660 Ti · D3D11 · 1920×1080",
   "tagline": "One terrain, spanning golden-hour scrubland to cold misty highland as world state. A from-scratch Three.js engine graded against PS4-native reference frames: builders ship, critics score blind, the single biggest gap comes back. Repeat until the tier is indistinguishable.",
   "strip": [
     {
-      "k": "Wave",
-      "v": "1 of 5 — repair & verify"
+      "k": "Oz body",
+      "v": "fixed — aliasing"
     },
     {
-      "k": "Agents live",
-      "v": "4 building"
+      "k": "Oz face",
+      "v": "queued"
+    },
+    {
+      "k": "HUD",
+      "v": "verified clean"
     },
     {
       "k": "Frame rate",
-      "v": "84-111 fps @ 1080p"
+      "v": "93 fps @ 1080p"
     },
     {
-      "k": "Draw calls",
-      "v": "168-222 / 400"
-    },
-    {
-      "k": "Ship gate",
-      "v": "78 / 100"
+      "k": "Agents",
+      "v": "paused for reset"
     }
   ],
   "systems": [
@@ -80,12 +80,12 @@
       "id": "character",
       "name": "Character System",
       "brief": "Original humanoid mesh, skeleton, skinning, PBR materials, idle animation. No copyrighted likeness or ripped rig.",
-      "status": "building",
-      "iteration": 1,
+      "status": "refining",
+      "iteration": 2,
       "score": null,
-      "captureDir": null,
-      "gap": "HALF-BUILT — the Character builder was killed mid-write by the account spend limit. Its work survived and is committed: a real skinned humanoid with skeleton, outfit, belt and buckle across four modules (build, geom, material, rig). But the portrait shot shows the surface is shredded — heavy mesh artifacts across the whole body, a scribbled face, and detached floating eyeballs. It renders and holds 83-87 fps, so the pipeline is sound; the geometry generation is not finished.",
-      "next": "Opus builder running: repairing the shredded mesh and skin weights, then re-targeting the design to Oz Macrion per the story canon — anime-styled sculpted hair readable as a silhouette in backlit, sword and flute visible, royal-but-travelling wardrobe. Judged at the hero and portrait poses."
+      "captureDir": "captures/2026-08-13T23-37-13_oz-check",
+      "gap": "HALF FIXED. Root cause #1 landed: the shredded surface was never geometry, it was shader aliasing. material.js quoted procedural detail in cycles per metre on a 1.8m character — cloth weave at 940 cyc/m is a 1.06mm period, and at portrait framing one pixel covers 0.5-1mm, so the detail sat past Nyquist. mBump() takes dFdx/dFdy of that height field, so the normal was randomised per fragment. Body, tunic, pauldron, belt and gloves now read cleanly. Root cause #2 remains: the head meshes by surface nets on a 5.8mm grid and several face primitives are under two cells wide (mouth groove 2.4mm, eye aperture 5.3mm, brows 3.3mm), so they mesh as isolated speckle — the scribbled face and misaligned eyes. Fix is queued.",
+      "next": "Face geometry repair queued for the usage reset. The dead agent ruled out skin weights, winding errors, unnormalized normals and duplicate triangles with evidence, so the successor resumes from its heartbeat rather than restarting."
     },
     {
       "id": "environment",
@@ -102,23 +102,23 @@
       "id": "visual-polish",
       "name": "Story, Quest & Cinematics",
       "brief": "Original Macrion premise, the first major quest, branching dialogue, progression state, and a data-driven cutscene system with spline camera moves.",
-      "status": "building",
+      "status": "blocked",
       "iteration": 1,
       "score": null,
       "captureDir": null,
       "gap": "PARTIALLY BUILT then killed by the spend limit. Surviving and committed: story.js, quest.js, dialogue.js, interaction.js, eventBus.js for game systems, plus cutscene.js and cutscene-data.js for cinematics. None verified end to end.",
-      "next": "Two builders running: Game Systems (Sonnet) verifying the quest machinery and replacing all placeholder narrative with the real canon — authoring Act 0 (the flute and the Great Head) and Act 0.5 (descent, first Snagulas, Sarah song) as playable quest data. Cinematics (Haiku) verifying cutscene camera authority never soft-locks."
+      "next": "Verification queued for the usage reset. Code exists on disk from an interrupted agent but has never been run end to end."
     },
     {
       "id": "interaction",
       "name": "Player, Audio & UI",
       "brief": "Third-person controller with terrain collision, adaptive synthesized score and ambience, and the HUD overlay. Everything audio is generated in code — no samples, no copyrighted music.",
-      "status": "building",
+      "status": "blocked",
       "iteration": 1,
       "score": null,
       "captureDir": null,
       "gap": "PARTIALLY BUILT then killed by the spend limit. Surviving and committed: six audio modules (synth, score, music, ambience, sfx, audio) all synthesized in code with no samples, plus hud.js/hud.css and the player controller. None verified end to end.",
-      "next": "Two builders running: Audio (Sonnet) verifying six never-run modules, wiring the explore/alert/combat/boss/resolve music state machine, and composing Sarah motif — the recurring theme that returns at every major beat. HUD (Haiku) verifying zero HUD pixels leak into captures."
+      "next": "Audio and HUD: HUD is VERIFIED — zero HUD pixels in captures, cutscene camera authority survives all three soft-lock cases. Audio still unverified; six modules plus sarah.js exist but have never been run."
     }
   ]
 }
