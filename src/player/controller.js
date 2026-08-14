@@ -63,6 +63,10 @@ const CAM_POS_SPRING = 14;    // spring-follow rate for camera boom position
 const CAM_LOOK_SPRING = 20;   // spring-follow rate for look target
 const CAM_COLLIDE_SKIN = 0.35;
 
+// Footstep cadence is distance-based (not time-based), so it naturally speeds
+// up with actual ground speed instead of drifting out of sync with it.
+const FOOTSTEP_STRIDE = 0.82; // meters of horizontal travel between footfalls
+
 export function createController(ctx) {
   const { engine, camera } = ctx;
   const dom = engine.renderer.domElement;
@@ -164,6 +168,10 @@ export function createController(ctx) {
   const desiredPos = new THREE.Vector3();
   const desiredLook = new THREE.Vector3();
   const rayPos = new THREE.Vector3();
+  const footPos = new THREE.Vector3();
+
+  let strideDist = 0;   // accumulated horizontal travel since last footfall
+  let wasGrounded = true;
 
   function terrainHeight(x, z) {
     return ctx.terrain?.heightAt?.(x, z) ?? 0;
@@ -274,6 +282,26 @@ export function createController(ctx) {
       } else {
         grounded = false;
       }
+
+      // ---- footstep / landing audio ---------------------------------------
+      const audio = c.engine.systems?.audio;
+      if (grounded && !wasGrounded) {
+        // Just touched down (landing from a jump/fall) — one-shot, resets the
+        // stride counter so the next footstep isn't a leftover fraction.
+        node.getWorldPosition(footPos);
+        audio?.play?.('landing', { position: { x: footPos.x, y: footPos.y, z: footPos.z } });
+        strideDist = 0;
+      } else if (grounded && hasInput) {
+        strideDist += Math.hypot(stepX, stepZ);
+        if (strideDist >= FOOTSTEP_STRIDE) {
+          strideDist -= FOOTSTEP_STRIDE;
+          node.getWorldPosition(footPos);
+          audio?.play?.('footstep', { position: { x: footPos.x, y: footPos.y, z: footPos.z } });
+        }
+      } else if (!grounded || !hasInput) {
+        strideDist = 0;
+      }
+      wasGrounded = grounded;
 
       // ---- character facing: smoothly turn toward movement direction ----
       if (hasInput) {

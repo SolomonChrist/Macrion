@@ -81,6 +81,71 @@ export function createCutscene(ctx) {
   letterboxContainer.appendChild(bottomBar);
   document.body.appendChild(letterboxContainer);
 
+  // End-card overlay — the hard-requirement final screen (docs/STORY.md
+  // "The end card — required content"). Sits above the letterbox (z-index)
+  // and, unlike the letterbox, is NOT torn down when the cutscene finishes:
+  // it is meant to remain on screen as the actual last thing the player
+  // sees, with a real clickable link. Built once, content is static.
+  const endCardContainer = document.createElement('div');
+  endCardContainer.id = 'macrion-endcard';
+  endCardContainer.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: #000;
+    color: #f2ead8;
+    font-family: Georgia, 'Times New Roman', serif;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 1.6s ease;
+    pointer-events: none;
+  `;
+
+  const endCardInner = document.createElement('div');
+  endCardInner.style.cssText = `
+    max-width: 640px;
+    padding: 0 32px;
+    pointer-events: auto;
+  `;
+  endCardInner.innerHTML = `
+    <div style="font-size: 14px; letter-spacing: 0.35em; text-transform: uppercase; opacity: 0.65; margin-bottom: 18px;">Macrion</div>
+    <div style="font-size: 17px; line-height: 1.7; margin-bottom: 26px;">
+      This entire game — every system, every character, every line of code —
+      was made using Claude and AI.
+    </div>
+    <div style="font-size: 15px; line-height: 1.7; margin-bottom: 26px; opacity: 0.85;">
+      Join the mailing list for AI + Automation at
+    </div>
+    <a href="https://www.solomonchrist.com" target="_blank" rel="noopener noreferrer"
+       style="display:inline-block; font-size: 22px; color: #e9c98a; text-decoration: none;
+              border-bottom: 1px solid rgba(233,201,138,0.55); padding-bottom: 4px; letter-spacing: 0.02em;">
+      www.solomonchrist.com
+    </a>
+  `;
+  endCardContainer.appendChild(endCardInner);
+  document.body.appendChild(endCardContainer);
+
+  function showEndCard() {
+    endCardContainer.style.display = 'flex';
+    // Force a layout flush so the opacity transition actually animates
+    // rather than jump-cutting straight to 1.
+    void endCardContainer.offsetHeight;
+    endCardContainer.style.opacity = '1';
+  }
+
+  function hideEndCard() {
+    endCardContainer.style.opacity = '0';
+    endCardContainer.style.pointerEvents = 'none';
+    setTimeout(() => { endCardContainer.style.display = 'none'; }, 1650);
+  }
+
   /**
    * Interpolate along a Catmull-Rom spline through keyframe positions.
    * Caches the curve per beat to avoid repeated creation.
@@ -197,6 +262,12 @@ export function createCutscene(ctx) {
       return { done: true, nextTime: elapsed };
     }
 
+    if (beat.type === 'endcard') {
+      if (beat.action === 'hide') hideEndCard();
+      else showEndCard();
+      return { done: true, nextTime: elapsed };
+    }
+
     return { done: true, nextTime: elapsed };
   }
 
@@ -227,9 +298,10 @@ export function createCutscene(ctx) {
       state.playResolve = resolve;
       state.skipRequested = false;
 
-      // Initialize all beats' _called flags
+      // Initialize all beats' one-shot guards
       for (const beat of script.beats) {
         beat._called = false;
+        beat._fired = false;
       }
 
       // Take camera authority
@@ -245,6 +317,11 @@ export function createCutscene(ctx) {
    */
   function skip() {
     if (!state.playing) return;
+
+    // The end card is a hard requirement (docs/STORY.md): if the player
+    // skips through the endCard cutscene before its own beat has shown it,
+    // force it up now rather than let skip silently swallow it.
+    if (state.script?.name === 'endCard') showEndCard();
 
     state.skipRequested = true;
     state.playing = false;
@@ -323,13 +400,26 @@ export function createCutscene(ctx) {
       return;
     }
 
-    // Process beats
-    let beatIndex = 0;
+    // Process beats. Beats with duration 0 (time/weather/callback/endcard)
+    // are instantaneous: they consume no timeline time, so they must fire
+    // exactly once, on the first frame they're reached, and then let the
+    // loop fall through to whatever timed beat follows in the SAME frame.
+    // (A `beatElapsed < beatDuration` test with beatDuration === 0 is never
+    // true for a non-negative beatElapsed, so treating them like timed beats
+    // silently skips them forever — that was the original bug here.)
     let beatElapsed = elapsed;
 
     for (let i = 0; i < script.beats.length; i++) {
       const beat = script.beats[i];
       const beatDuration = beat.duration || 0;
+
+      if (beatDuration === 0) {
+        if (beatElapsed >= 0 && !beat._fired) {
+          processBeat(beat, 0, ctx);
+          beat._fired = true;
+        }
+        continue; // zero-duration beats consume no timeline time
+      }
 
       if (beatElapsed < beatDuration) {
         processBeat(beat, beatElapsed, ctx);
@@ -352,6 +442,7 @@ export function createCutscene(ctx) {
   const dispose = () => {
     removeEventListener('keydown', handleKeyDown);
     letterboxContainer.remove();
+    endCardContainer.remove();
   };
 
   return {
@@ -362,5 +453,8 @@ export function createCutscene(ctx) {
     isPlaying,
     define,
     dispose,
+    // Exposed for console testing / direct use outside a scripted beat.
+    showEndCard,
+    hideEndCard,
   };
 }

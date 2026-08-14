@@ -133,7 +133,15 @@ export function createCharacter(ctx) {
   const { sdfParts, pieces, ms } = buildCharacterGeometry();
   const all = [...sdfParts, ...pieces];
 
-  const { bones, byName, root } = buildSkeleton();
+  // NOTE: `buildSkeleton()`'s `root` is the SKINNING skeleton's root Bone (an
+  // ancestor of the hip/spine/limb chain, used only for bind pose). It is
+  // named `skeletonRoot` here — deliberately NOT exposed as the module's
+  // `root` — because `animator.apply(t)` (character/rig.js) resets every
+  // unposed bone, including this one, to its rest-local transform every
+  // frame as a pure function of time. If the controller also wrote world
+  // position onto that same bone, the animator would silently wipe it back
+  // to (0,0,0) the very next frame. See the ownership fix on `group` below.
+  const { bones, byName, root: skeletonRoot } = buildSkeleton();
 
   // ------------------------------------------------------------ skinning --
   let total = 0;
@@ -169,7 +177,7 @@ export function createCharacter(ctx) {
 
   const rig = new THREE.Group();
   rig.name = 'warden-rig';
-  rig.add(root);
+  rig.add(skeletonRoot);
   rig.add(mesh);
   rig.updateMatrixWorld(true);
   const skeleton = new THREE.Skeleton(bones);
@@ -204,7 +212,15 @@ export function createCharacter(ctx) {
     name: 'character',
     object3D: world,
     spawn: SPAWN,
-    root,
+    // OWNERSHIP FIX: `root` is the character's WORLD transform node — the
+    // Group the controller drives (position, facing yaw). It is a sibling of
+    // the skinning skeleton, never touched by animator.apply(), so the
+    // animator (bone-local pose) and the controller (root/group transform)
+    // never write translation to the same node. Previously this was the
+    // skeleton's root Bone, which animator.apply() resets to its rest-local
+    // transform every frame — that reset silently wiped every position write
+    // the controller made, which is why the player could not move.
+    root: group,
     skeleton,
     mesh,
     material,
