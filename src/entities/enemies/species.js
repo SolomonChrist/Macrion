@@ -45,13 +45,16 @@ const BASE = {
   browHeavy: 1.00,
 
   // ---- weapons ----
-  teeth: { upper: 7, lower: 6, len: 0.030, w: 0.0085, tusk: 0.040, arc: 0.90 },
+  teeth: { upper: 9, lower: 8, len: 0.034, w: 0.0070, tusk: 0.042, arc: 0.62 },
   claw: { len: 0.055, w: 0.011, count: 3 },
-  spines: { count: 7, h: 0.055, r: 0.020, from: 0.30, to: 0.98 },
+  spines: { count: 8, h: 0.090, r: 0.022, from: 0.26, to: 0.98 },
   horn: { len: 0.075, r: 0.022, sweep: 0.55 },
 
   // ---- eyes ----
-  eye: { r: 0.0235, sep: 0.048, y: 0.048, z: 0.074, sink: 0.010, glow: 3.4 },
+  // Small, deep and only moderately hot. The first pass used r 0.024 with a
+  // glow of 3.4 and ACES blew both eyes to a flat orange disc the size of a
+  // fist — the brow shadow is what sells "glowing", not the emissive value.
+  eye: { r: 0.0170, sep: 0.046, y: 0.044, z: 0.070, sink: 0.020, glow: 1.55 },
 
   // ---- shading ----
   hide:  [0.052, 0.086, 0.031],   // linear
@@ -90,7 +93,7 @@ export const SPECIES = {
   grunt: derive({
     height: 1.66,
     legLen: 0.86, stance: 1.34, shoulderW: 1.30, armLen: 1.24,
-    hunch: 0.34, headPitch: -0.28,
+    hunch: 0.46, headPitch: -0.22, neckDrop: 0.075, browHeavy: 0.85,
     torsoW: 1.08, torsoD: 1.06, armGirth: 1.06, legGirth: 1.04, belly: 1.12,
     headScale: 1.06, skullLen: 1.00, jawW: 1.06, jawOpen: 0.032,
     hide: [0.048, 0.082, 0.030], belly_c: [0.082, 0.094, 0.050],
@@ -105,15 +108,15 @@ export const SPECIES = {
   stalker: derive({
     height: 1.92,
     legLen: 1.06, stance: 1.14, shoulderW: 1.10, armLen: 1.34,
-    hunch: 0.44, headPitch: -0.34, neckFwd: 0.085, neckDrop: 0.045,
+    hunch: 0.62, headPitch: -0.26, neckFwd: 0.105, neckDrop: 0.090,
     torsoW: 0.80, torsoD: 0.84, armGirth: 0.74, legGirth: 0.78, belly: 0.72,
-    headScale: 0.92, skullLen: 1.34, jawW: 0.84, jawOpen: 0.040, browHeavy: 0.80,
+    headScale: 0.92, skullLen: 1.34, jawW: 0.84, jawOpen: 0.040, browHeavy: 0.62,
     tail: { len: 0.92, thick: 0.040, drop: 0.06 },
-    teeth: { upper: 9, lower: 8, len: 0.036, w: 0.0075, tusk: 0.030, arc: 1.00 },
+    teeth: { upper: 11, lower: 10, len: 0.040, w: 0.0060, tusk: 0.030, arc: 0.70 },
     claw: { len: 0.082, w: 0.010, count: 3 },
-    spines: { count: 10, h: 0.082, r: 0.019, from: 0.22, to: 1.00 },
+    spines: { count: 11, h: 0.125, r: 0.020, from: 0.20, to: 1.00 },
     horn: { len: 0.105, r: 0.019, sweep: 0.75 },
-    eye: { r: 0.0205, sep: 0.040, y: 0.042, z: 0.070, sink: 0.008, glow: 4.6 },
+    eye: { r: 0.0150, sep: 0.038, y: 0.040, z: 0.068, sink: 0.018, glow: 1.95 },
     hide: [0.062, 0.098, 0.026], belly_c: [0.098, 0.106, 0.044],
     scaleFreq: 250, hueJitter: 0.13,
     gait: { speedMul: 1.45, strideMul: 1.20, bob: 1.15 },
@@ -128,15 +131,15 @@ export const SPECIES = {
   brute: derive({
     height: 2.10,
     legLen: 0.80, stance: 1.52, shoulderW: 1.52, armLen: 1.30,
-    hunch: 0.40, headPitch: -0.30, neckFwd: 0.030, neckDrop: 0.055,
-    torsoW: 1.34, torsoD: 1.26, armGirth: 1.42, legGirth: 1.30, belly: 1.26,
-    headScale: 1.22, skullLen: 0.92, jawW: 1.28, jawOpen: 0.036, browHeavy: 1.45,
+    hunch: 0.54, headPitch: -0.20, neckFwd: 0.030, neckDrop: 0.110,
+    torsoW: 1.34, torsoD: 1.26, armGirth: 1.34, legGirth: 1.30, belly: 1.26,
+    headScale: 1.22, skullLen: 0.92, jawW: 1.28, jawOpen: 0.036, browHeavy: 1.10,
     tail: { len: 0.46, thick: 0.070, drop: 0.14 },
-    teeth: { upper: 7, lower: 6, len: 0.040, w: 0.0125, tusk: 0.075, arc: 0.82 },
+    teeth: { upper: 8, lower: 7, len: 0.042, w: 0.0100, tusk: 0.078, arc: 0.58 },
     claw: { len: 0.066, w: 0.016, count: 3 },
-    spines: { count: 8, h: 0.078, r: 0.032, from: 0.26, to: 0.96 },
+    spines: { count: 9, h: 0.120, r: 0.034, from: 0.24, to: 0.96 },
     horn: { len: 0.130, r: 0.034, sweep: 0.40 },
-    eye: { r: 0.0245, sep: 0.062, y: 0.050, z: 0.078, sink: 0.014, glow: 3.0 },
+    eye: { r: 0.0185, sep: 0.058, y: 0.046, z: 0.074, sink: 0.024, glow: 1.40 },
     hide: [0.036, 0.052, 0.028], belly_c: [0.060, 0.066, 0.044],
     plate: [0.052, 0.050, 0.038],
     scaleFreq: 170, hueJitter: 0.08,

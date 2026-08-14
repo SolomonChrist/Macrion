@@ -185,7 +185,8 @@ function buildField(sp, P, fine) {
   // ------------------------------------------------------------- arms ----
   for (const side of ['L', 'R']) {
     const sh = g(`arm${side}`), fo = g(`fore${side}`), ha = g(`hand${side}`), he = g(`handEnd${side}`);
-    F.ellipsoid(sh, [0.092 * ag * s, 0.090 * ag * s, 0.088 * ag * s], { mat: EMAT.HIDE, k: 0.07 });
+    F.ellipsoid([sh[0], sh[1] - 0.012 * s, sh[2]],
+      [0.078 * ag * s, 0.074 * ag * s, 0.080 * ag * s], { mat: EMAT.HIDE, k: 0.075 });
     F.capsule(sh, fo, 0.066 * ag * s, 0.052 * ag * s, { mat: EMAT.HIDE, k: 0.055 });
     F.capsule(fo, ha, 0.058 * ag * s, 0.040 * ag * s, { mat: EMAT.HIDE, k: 0.05 });
     F.ellipsoid([ha[0], ha[1] - 0.005 * s, ha[2] + 0.008 * s],
@@ -242,10 +243,18 @@ function buildField(sp, P, fine) {
   for (const sx of [1, -1]) {
     F.ellipsoid(hp(sx * 0.062 * jw, 0.004, 0.006), hr(0.044 * jw, 0.052, 0.058), { mat: EMAT.HIDE, k: 0.045, part: 'head' });
   }
-  // brow: a single heavy bar. It is the shadow over the eye that makes the red
-  // read as a glow rather than a dot, so it is deliberately over-scaled.
-  F.box(hp(0, 0.066, 0.050), [0.086 * jw * hs, 0.019 * sp.browHeavy * hs, 0.022 * hs],
-    { round: 0.012 * hs, mat: EMAT.PLATE, k: 0.026, part: 'head' });
+  // Brow. FIRST PASS FAILED: a wide flat rounded box at this scale read as a
+  // welded visor bolted to the skull, because a `round` of 12 mm on a 19 mm
+  // half-height leaves flat top and front planes that catch the key light as
+  // one slab. Now it is a squashed ellipsoid pair — no flat faces at all —
+  // seated lower and blended hard into the cranium (k 0.05), so what the eye
+  // sees is an overhanging bony ridge and the shadow it throws.
+  for (const sx of [1, -1]) {
+    F.ellipsoid(hp(sx * 0.040 * jw, 0.060, 0.044),
+      hr(0.050 * jw, 0.017 * sp.browHeavy, 0.030), { mat: EMAT.PLATE, k: 0.050, part: 'head' });
+  }
+  F.ellipsoid(hp(0, 0.058, 0.038), hr(0.030 * jw, 0.015 * sp.browHeavy, 0.028),
+    { mat: EMAT.PLATE, k: 0.050, part: 'head' });
   // upper muzzle
   F.capsule(hp(0, 0.014, 0.026), hp(0, -0.004, 0.026 + 0.108 * sl),
     0.062 * jw * hs, 0.036 * jw * hs,
@@ -259,8 +268,8 @@ function buildField(sp, P, fine) {
     { mat: EMAT.HIDE, k: 0.05, part: 'head' });
   // eye sockets carved under the brow
   for (const sx of [1, -1]) {
-    F.ellipsoid(hp(sx * sp.eye.sep, sp.eye.y, sp.eye.z),
-      hr(0.034, 0.030, 0.034), { op: 'sub', k: 0.020, part: 'head' });
+    F.ellipsoid(hp(sx * sp.eye.sep, sp.eye.y, sp.eye.z + 0.012),
+      hr(0.030, 0.026, 0.034), { op: 'sub', k: 0.016, part: 'head' });
   }
   // neck stub inside the head pass so the two resolutions overlap
   F.capsule(hp(0, -0.02, -0.05), [H[0], H[1] - 0.20 * s, H[2] - 0.10 * s],
@@ -374,7 +383,7 @@ function mergeSpikes(list) {
  * Everything sharp, plus the eyes. All of it explicit geometry for the reason
  * in the file header.
  */
-function buildPieces(sp, P, lodIdx) {
+function buildPieces(sp, P, lodIdx, bodySample) {
   const parts = [];
   const s = sp.height / 1.78;
   const hs = sp.headScale * s;
@@ -497,11 +506,19 @@ function buildPieces(sp, P, lodIdx) {
       const u = lerp(S.from, S.to, n === 1 ? 0.5 : i / (n - 1));
       const p = along(u);
       const rise = Math.sin(Math.PI * clamp01((u - S.from) / (S.to - S.from))) * 0.55 + 0.45;
-      const back = 0.130 * s * (1 - 0.25 * u) * sp.torsoD;
-      const b = [p[0], p[1], p[2] - back];
+      // FIRST PASS FAILED: the base was 0.130 m behind the spine centreline and
+      // the torso is ~0.18 m deep, so every spine was BURIED and the silhouette
+      // was a green man. The base now sits on the actual dorsal surface, found
+      // by marching the field backwards until it crosses zero.
+      let back = 0.10 * s;
+      for (let q = 0; q < 26; q++) {
+        if (bodySample(p[0], p[1], p[2] - back) > 0) break;
+        back += 0.012 * s;
+      }
+      const b = [p[0], p[1], p[2] - back + 0.020 * s];
       const h = S.h * rise * s;
-      list.push(spike(b, [b[0], b[1] + h * 0.80, b[2] - h * 0.55], S.r * s * rise, sides,
-        [0, 0, -h * 0.35]));
+      list.push(spike(b, [b[0], b[1] + h * 0.72, b[2] - h * 0.62], S.r * s * rise, sides,
+        [0, 0, -h * 0.42]));
     }
     push(mergeSpikes(list), EMAT.PLATE, null, [1, 1, 1]);
 
@@ -527,13 +544,17 @@ function matOverride(sp, P, x, y, z, nx, ny, nz) {
   const hs = sp.headScale * s;
   const H = P.get('head');
   // inside the open mouth: between the jaw planes, forward of the cheeks
+  // FIRST PASS FAILED: this band was too tall and too wide, so the whole top of
+  // the lower jaw came back tagged MOUTH and rendered as one huge wet tongue
+  // with a jagged per-vertex boundary. Tightened to the gap itself, and the
+  // shader's mouth albedo went much darker.
   const my = H[1] - (0.030 + sp.jawOpen * 0.5) * hs;
-  const inSlot = z > H[2] + 0.010 * hs
-    && Math.abs(y - my) < (0.030 + sp.jawOpen * 0.8) * hs
-    && Math.abs(x - H[0]) < 0.078 * hs * sp.jawW;
+  const inSlot = z > H[2] + 0.030 * hs
+    && Math.abs(y - my) < (0.014 + sp.jawOpen * 0.55) * hs
+    && Math.abs(x - H[0]) < 0.062 * hs * sp.jawW;
   // only the surfaces that actually FACE INTO the gap: the underside of the
   // upper jaw and the top of the lower one. Everything else there is lip.
-  if (inSlot && ((y > my && ny < 0.25) || (y <= my && ny > -0.25))) return EMAT.MOUTH;
+  if (inSlot && ((y > my && ny < -0.10) || (y <= my && ny > 0.10))) return EMAT.MOUTH;
   // belly / throat: downward- or forward-facing on the ventral centreline
   const hips = P.get('hips');
   const ventral = z > hips[2] - 0.02 && ny < 0.30 && nz > -0.10
@@ -607,7 +628,7 @@ export function buildSnagula(sp, lodIdx) {
   const head = meshPart(field, sp, P, ['head'], headMin, headMax, L.headRes, aoSample,
     { smooth: L.smooth, project: L.project, ao: { radii: [0.014, 0.038, 0.085] } });
   if (head) parts.push(head);
-  for (const p of buildPieces(sp, P, lodIdx)) parts.push(p);
+  for (const p of buildPieces(sp, P, lodIdx, field.sampler(['body', 'head']))) parts.push(p);
 
   // ------------------------------------------------------------ skinning --
   let total = 0;

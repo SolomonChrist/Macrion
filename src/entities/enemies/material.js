@@ -155,12 +155,16 @@ vec3 eBump( vec3 N, vec3 wp, float h, float scale ) {
  */
 float eHeight( int m, vec3 p, float det ) {
   if ( m == 0 ) {                               // hide: fine scales + coarse plates
+    // FIRST PASS FAILED: coarse band at 0.46 with a 12.5 mm bump amplitude read
+    // as broccoli at portrait range. A real scaled hide is mostly ROUGHNESS
+    // variation with shallow relief — the relief has to scale with wavelength
+    // (the same lesson as the cloth-to-chainmail failure in oz-repair.md).
     float fine = ( 1.0 - eCell( p * uScaleFreq ) ) * det;
-    float plate = ( 1.0 - eCell( p * 74.0 ) );
-    return fine * 0.34 + plate * 0.46 + eFbm( p * 15.0, 2 ) * 0.22;
+    float plate = ( 1.0 - eCell( p * 58.0 ) );
+    return fine * 0.30 + plate * 0.24 + eFbm( p * 13.0, 2 ) * 0.34;
   } else if ( m == 1 ) {                        // belly: transverse banding
-    float band = smoothstep( 0.35, 0.5, abs( fract( p.y * 26.0 + p.z * 3.0 ) - 0.5 ) );
-    return band * 0.55 + eFbm( p * 40.0, 2 ) * 0.28 * det;
+    float band = smoothstep( 0.30, 0.5, abs( fract( p.y * 15.0 + p.z * 2.0 ) - 0.5 ) );
+    return band * 0.26 + eFbm( p * 34.0, 2 ) * 0.26 * det + eFbm( p * 11.0, 2 ) * 0.24;
   } else if ( m == 2 || m == 7 ) {              // bone plate / horn: ridged
     return eFbm( vec3( p.x * 30.0, p.y * 150.0, p.z * 30.0 ), 2 ) * 0.50 * det
          + eFbm( p * 22.0, 2 ) * 0.34;
@@ -179,8 +183,8 @@ void eParams( int m, out vec3 alb, out float rough, out float metal, out float t
   else if ( m == 2 ) { alb = uPlate; rough = 0.46; }
   else if ( m == 3 ) { alb = vec3( 0.560, 0.520, 0.410 ); rough = 0.17; trans = 0.34; }
   else if ( m == 4 ) { alb = vec3( 0.0250, 0.0225, 0.0195 ); rough = 0.22; }
-  else if ( m == 5 ) { alb = vec3( 0.0300, 0.0040, 0.0030 ); rough = 0.10; }
-  else if ( m == 6 ) { alb = vec3( 0.1150, 0.0220, 0.0230 ); rough = 0.26; trans = 0.45; }
+  else if ( m == 5 ) { alb = vec3( 0.0120, 0.0020, 0.0015 ); rough = 0.10; }
+  else if ( m == 6 ) { alb = vec3( 0.0340, 0.0062, 0.0068 ); rough = 0.30; trans = 0.22; }
   else               { alb = vec3( 0.0480, 0.0440, 0.0360 ); rough = 0.40; }
 }
 `;
@@ -195,7 +199,7 @@ export function createSnagulaMaterial(sp, boneUniforms) {
     uHide: { value: new THREE.Vector3(...sp.hide) },
     uBelly: { value: new THREE.Vector3(...sp.belly_c) },
     uPlate: { value: new THREE.Vector3(...sp.plate) },
-    uEyeColor: { value: new THREE.Vector3(1.0, 0.085, 0.030) },
+    uEyeColor: { value: new THREE.Vector3(1.0, 0.040, 0.016) },
     uEyeGlow: { value: sp.eye.glow },
     uScaleFreq: { value: sp.scaleFreq },
     uWet: { value: 0.0 },
@@ -246,8 +250,8 @@ float eFW; float eDet;`)
       c *= 0.88 + 0.26 * blotch;
       // sickly yellow-green in the raised scale tops, cold in the crevices
       float h = eHeight( eM, vBindPos, eDet );
-      c = mix( c * vec3( 0.80, 0.86, 1.00 ), c * vec3( 1.22, 1.14, 0.72 ), clamp( h * 0.9, 0.0, 1.0 ) );
-      c *= mix( 0.55, 1.06, clamp( vBakedAO, 0.0, 1.0 ) );
+      c = mix( c * vec3( 0.86, 0.92, 1.00 ), c * vec3( 1.14, 1.08, 0.80 ), clamp( h * 0.85, 0.0, 1.0 ) );
+      c *= mix( 0.68, 1.05, clamp( vBakedAO, 0.0, 1.0 ) );
     } else if ( eM == 3 ) {
       // teeth yellow toward the gum and stay bone-white at the tip
       c *= 0.62 + 0.55 * clamp( eFbm( vBindPos * 60.0, 2 ), 0.0, 1.0 );
@@ -273,9 +277,9 @@ float eFW; float eDet;`)
   {
     float h = eHeight( eM, vBindPos, eDet );
     float amp =
-      ( eM == 0 ) ? 0.0125 :
-      ( eM == 1 ) ? 0.0075 :
-      ( eM == 2 || eM == 7 ) ? 0.0090 :
+      ( eM == 0 ) ? 0.0062 :
+      ( eM == 1 ) ? 0.0042 :
+      ( eM == 2 || eM == 7 ) ? 0.0060 :
       ( eM == 3 || eM == 4 ) ? 0.0022 :
       ( eM == 6 ) ? 0.0030 : 0.0;
     if ( amp > 0.0 ) normal = eBump( normal, - vViewPosition, h, amp * ( 1.0 - uWet * 0.6 ) );
@@ -286,11 +290,13 @@ float eFW; float eDet;`)
   if ( eM == 5 ) {
     vec3 V = normalize( vViewPosition );
     float face = clamp( dot( normal, V ), 0.0, 1.0 );
-    // hot core, falling off to a darker ring so it reads as a lens, not a dot
-    float core = pow( face, 1.6 );
-    totalEmissiveRadiance += uEyeColor * uEyeGlow * ( 0.30 + 0.70 * core );
-  } else if ( eM == 6 ) {
-    totalEmissiveRadiance += vec3( 0.030, 0.004, 0.004 );
+    // FIRST PASS FAILED: 0.30 + 0.70*core at a glow of 3.4 meant even the
+    // grazing rim of the globe emitted ~1.0, which ACES clipped to white — two
+    // flat orange discs. The rim now goes nearly black, so the sphere reads as
+    // a wet lens with a hot pupil, and the value is low enough to stay RED.
+    float core = pow( face, 3.4 );
+    float ring = pow( face, 0.9 ) * 0.16;
+    totalEmissiveRadiance += uEyeColor * uEyeGlow * ( ring + core );
   }`)
 
       .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
