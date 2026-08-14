@@ -200,7 +200,7 @@ export function buildField() {
   // ---------------------------------------------------- neck (body) -----
   // The visible neck belongs to the head loft; this is only the stub the collar
   // sits on, kept in the body pass so the collar has something to occlude.
-  F.capsule([0, 1.398, -0.016], [0, 1.500, 0.002], 0.0500, 0.0470,
+  F.capsule([0, 1.372, -0.016], [0, 1.452, 0.000], 0.0360, 0.0340,
     { scale: [1, 1, 0.97], mat: MAT.SKIN, k: 0.04, part: B, bones: { neck: 1.0, chest: 0.35, head: 0.3 } });
 
 
@@ -324,18 +324,21 @@ const HEAD_PROF = [
   [1.7885, 0.0114, 0.0128, -0.0148, 1.00, 0.00],
 ];
 
+const HEAD_W = 1.05;   // the skull read small next to the neck; widen, do not lengthen
 function headSec(y) {
   const P = HEAD_PROF;
-  if (y <= P[0][0]) return P[0];
+  if (y <= P[0][0]) return [P[0][0], P[0][1] * HEAD_W, P[0][2] * HEAD_W, P[0][3], P[0][4], P[0][5]];
   for (let i = 0; i < P.length - 1; i++) {
     if (y <= P[i + 1][0]) {
       const t = (y - P[i][0]) / (P[i + 1][0] - P[i][0]);
       const o = new Array(P[i].length);
       for (let k = 0; k < P[i].length; k++) o[k] = lerp(P[i][k], P[i + 1][k], t);
+      o[1] *= HEAD_W; o[2] *= HEAD_W;
       return o;
     }
   }
-  return P[P.length - 1];
+  const L = P[P.length - 1];
+  return [L[0], L[1] * HEAD_W, L[2] * HEAD_W, L[3], L[4], L[5]];
 }
 
 function headBase(y, th) {
@@ -452,7 +455,7 @@ function eyeOutline(sgn, n) {
     let a, b;
     if (t < 0.5) {
       a = EYE_W * Math.cos(Math.PI * (t / 0.5));
-      b = EYE_HU * Math.pow(Math.max(0, 1 - (a / EYE_W) ** 2), 0.42);
+      b = EYE_HU * Math.pow(Math.max(0, 1 - (a / EYE_W) ** 2), 0.31);
     } else {
       a = -EYE_W * Math.cos(Math.PI * ((t - 0.5) / 0.5));
       b = -EYE_HL * Math.pow(Math.max(0, 1 - (a / EYE_W) ** 2), 0.55);
@@ -541,11 +544,15 @@ function spike(a, c, b, w0, flat = 0.42, ns = 6, nu = 6) {
 // heavier so the shape is not a mirrored ornament.
 const HAIR_SPIKES = [
   // front bangs, tips down at brow height
-  [[-0.012, 1.762, 0.052], [-0.032, 1.742, 0.086], [-0.042, 1.674, 0.084], 0.0170],
-  [[0.014, 1.764, 0.050], [0.038, 1.744, 0.084], [0.050, 1.682, 0.078], 0.0160],
-  [[0.001, 1.772, 0.038], [0.002, 1.754, 0.082], [0.005, 1.660, 0.076], 0.0130],
-  [[-0.050, 1.744, 0.036], [-0.078, 1.718, 0.062], [-0.088, 1.656, 0.050], 0.0145],
-  [[0.052, 1.742, 0.034], [0.082, 1.714, 0.060], [0.092, 1.648, 0.046], 0.0155],
+  [[-0.014, 1.766, 0.050], [-0.036, 1.744, 0.092], [-0.048, 1.668, 0.090], 0.0250],
+  [[0.016, 1.768, 0.048], [0.042, 1.746, 0.090], [0.056, 1.678, 0.084], 0.0240],
+  [[0.001, 1.776, 0.034], [0.002, 1.756, 0.088], [0.006, 1.652, 0.082], 0.0210],
+  [[-0.052, 1.748, 0.032], [-0.082, 1.720, 0.066], [-0.094, 1.650, 0.054], 0.0225],
+  [[0.054, 1.746, 0.030], [0.086, 1.716, 0.064], [0.098, 1.642, 0.050], 0.0235],
+  [[-0.034, 1.772, 0.028], [-0.058, 1.752, 0.078], [-0.072, 1.690, 0.076], 0.0195],
+  [[0.036, 1.772, 0.026], [0.062, 1.750, 0.076], [0.078, 1.700, 0.070], 0.0190],
+  [[-0.070, 1.734, 0.014], [-0.098, 1.712, 0.044], [-0.108, 1.672, 0.026], 0.0180],
+  [[0.072, 1.732, 0.012], [0.100, 1.710, 0.042], [0.112, 1.664, 0.022], 0.0180],
   // crown fan, the tall part of the silhouette
   [[0.000, 1.796, -0.004], [0.004, 1.856, -0.040], [0.010, 1.894, -0.088], 0.0260],
   [[-0.038, 1.790, -0.010], [-0.062, 1.846, -0.048], [-0.070, 1.872, -0.102], 0.0230],
@@ -586,7 +593,7 @@ export function buildPieces(field = null, aoSample = null) {
   // tracks the neck cone with only 4-6 mm of clearance and its bottom edge
   // sits below where the neck meets the trapezius.
   {
-    const neckR = (y) => lerp(0.0625, 0.0505, clamp01((y - 1.398) / 0.158));
+    const neckR = (y) => lerp(0.0442, 0.0376, clamp01((y - 1.398) / 0.158));
     const cz = -0.010;
     const yB = 1.391;
     const NS = 42;
@@ -919,9 +926,9 @@ export function buildPieces(field = null, aoSample = null) {
   // ---- neck (a separate tube, so the jaw can keep a hard underside) ----
   {
     const NECK = [
-      [1.3920, 0.0500, 0.0465, -0.0140], [1.4400, 0.0490, 0.0450, -0.0120],
-      [1.4900, 0.0475, 0.0440, -0.0080], [1.5300, 0.0455, 0.0430, -0.0020],
-      [1.5600, 0.0430, 0.0420, 0.0040], [1.5850, 0.0390, 0.0400, 0.0090],
+      [1.3920, 0.0442, 0.0420, -0.0140], [1.4400, 0.0432, 0.0408, -0.0120],
+      [1.4900, 0.0416, 0.0396, -0.0080], [1.5300, 0.0398, 0.0388, -0.0020],
+      [1.5600, 0.0376, 0.0380, 0.0040], [1.5850, 0.0344, 0.0364, 0.0090],
     ];
     const NU = 20;
     const sections = NECK.map(([y, rx, rz, cz]) => {
@@ -970,18 +977,18 @@ export function buildPieces(field = null, aoSample = null) {
       const q = i / N;
       const a = lerp(-MW, MW, q);
       const r = a / MW;
-      const base = -0.0600 + 0.0028 * r * r;
+      const base = -0.0672 + 0.0030 * r * r;
       const th = 0.0023 * Math.pow(Math.max(0, 1 - r * r), 0.35);
       samples.push({ u: a, b0: base - th * 0.55, b1: base + th * 0.45, o0: 0.0008, o1: 0.0027 });
     }
     const g = faceRibbon(samples);
     pushFlat(g, MAT.SKIN, { head: 1.0 }, 0.62);
-    paint(g, () => [0.30, 0.155, 0.145]);
+    paint(g, () => [0.26, 0.150, 0.142]);
     // lower lip catch-light
-    const lip = faceDome(ellipseOutline(0, -0.0668, 0.0128, 0.0034, 16), [0, -0.0668],
+    const lip = faceDome(ellipseOutline(0, -0.0740, 0.0128, 0.0034, 16), [0, -0.0740],
       [[1.0, 0.0005], [0.60, 0.0018], [0.10, 0.0022]]);
     pushFlat(lip, MAT.SKIN, { head: 1.0 }, 0.94);
-    paint(lip, () => [1.30, 0.94, 0.90]);
+    paint(lip, () => [1.14, 0.94, 0.92]);
   }
 
   // ---- eyes ----
@@ -1031,7 +1038,7 @@ export function buildPieces(field = null, aoSample = null) {
         const q = i / N;
         const a = lerp(-EYE_W - 0.0012, EYE_W + 0.0054, q);
         const ac = clamp(a, -EYE_W, EYE_W);
-        const base = EYE_HU * Math.pow(Math.max(0, 1 - (ac / EYE_W) ** 2), 0.42) + EYE_TILT * a;
+        const base = EYE_HU * Math.pow(Math.max(0, 1 - (ac / EYE_W) ** 2), 0.31) + EYE_TILT * a;
         const th = (0.0017 + 0.0031 * q) * Math.pow(Math.sin(Math.PI * q), 0.5);
         samples.push({ u: s * (EYE_U + a), b0: base - 0.0005, b1: base + th, o0: 0.0016, o1: 0.0047 });
       }
